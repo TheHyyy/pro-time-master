@@ -1,30 +1,73 @@
 <template>
   <div>
     <div>待办事项列表</div>
-    <AddPlan @update="addNewTodo" />
-    <div v-for="(todo, index) in todos" :key="index" class="todo-item">
-      <TodoItem :todo="todo" @remove="removeTodo(index)" />
-    </div>
+    <el-button type="primary" @click="openAddDialog">添加任务</el-button>
+    <AddPlan
+      :visible="isAddDialogVisible"
+      @close="closeAddDialog"
+      @update="addNewTodo"
+    />
+    <AddPlan
+      :visible="isEditDialogVisible"
+      :todo="editingTodo"
+      @close="closeEditDialog"
+      @update="updateTodo"
+    />
+    <TodoList :todos="todos"  />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import AddPlan from './components/AddPlan.vue';
-import TodoItem from './components/TodoItem.vue';
+import AddPlan from "./components/AddPlan.vue";
+import TodoList from "./components/TodoList.vue";
 
 const todos = ref([]);
+const isAddDialogVisible = ref(false);
+const isEditDialogVisible = ref(false);
+const editingTodo = ref(null);
 
 // 从 localStorage 读取数据
 function loadTodos() {
-  const storedTodos = localStorage.getItem('todos');
+  const storedTodos = localStorage.getItem("todos");
   if (storedTodos) {
     todos.value = JSON.parse(storedTodos);
   }
 }
 
+function openAddDialog() {
+  isAddDialogVisible.value = true;
+}
+
+function closeAddDialog() {
+  isAddDialogVisible.value = false;
+}
+
 function addNewTodo(newTodo) {
+  newTodo.id = Date.now(); // Assign a unique ID
   todos.value.push(newTodo);
+  isAddDialogVisible.value = false;
+}
+
+function updateTodo(updatedTodo) {
+  const index = todos.value.findIndex((todo) => todo.id === updatedTodo.id);
+  if (index !== -1) {
+    todos.value[index] = updatedTodo;
+  }
+  isEditDialogVisible.value = false;
+}
+
+function removeTodo(index) {
+  todos.value.splice(index, 1);
+}
+
+function editTodo(todo) {
+  editingTodo.value = { ...todo };
+  isEditDialogVisible.value = true;
+}
+
+function closeEditDialog() {
+  isEditDialogVisible.value = false;
 }
 
 // 在 todos 变化时更新 localStorage
@@ -35,10 +78,6 @@ watch(
   },
   { deep: true }
 );
-
-function removeTodo(index) {
-  todos.value.splice(index, 1);
-}
 
 // 在组件挂载时加载数据
 onMounted(() => {
