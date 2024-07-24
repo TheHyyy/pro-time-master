@@ -12,7 +12,7 @@ const router = createRouter({
         {
           path: "/",
           name: "DemoOne",
-          component: () => import("@/views/demo1/index.vue"),
+          component: () => import("@/views/homepage/index.vue"),
           meta: {
             title: "官网首页",
             background: "需要传递的数据",
