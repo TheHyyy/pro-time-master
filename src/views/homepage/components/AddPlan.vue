@@ -45,69 +45,43 @@
             </div>
           </template>
         </el-select>
-        <!-- <el-popover
-          placement="bottom"
-          title="Title"
-          :width="200"
-          trigger="click"
-          content="this is content, this is content, this is content"
-        >
-          <template #reference>
-            <el-icon style="color: #3f8ef7"><MessageBox /></el-icon>
-          </template>
-          <div>
-            asdasdasd12312
-          </div>
-        </el-popover> -->
       </template>
       <template #append>
-        <el-rate
-          v-model="localTodo.estimatedPomodoros"
-          :icons="icons"
-          :void-icon="Clock"
-          :colors="['#409eff', '#67c23a', '#FF9900']"
-          clearable
-        />
+        <el-popover
+          placement="top-start"
+          :width="200"
+          trigger="hover"
+          content="预计番茄钟~"
+        >
+          <template #reference>
+            <el-rate
+              v-model="localTodo.estimatedPomodoros"
+              :icons="icons"
+              :void-icon="Clock"
+              :colors="['#409eff', '#67c23a', '#FF9900']"
+              clearable
+            />
+          </template>
+        </el-popover>
       </template>
     </el-input>
-    <el-dialog v-model="showDialog" :title="dialogTitle">
-      <el-form label-width="120px">
-        <el-form-item label="任务名称">
-          <el-input v-model="localTodo.text" placeholder="请输入任务名称" />
-        </el-form-item>
-        <el-form-item label="重要">
-          <el-radio-group v-model="localTodo.important">
-            <el-radio :value="1">是</el-radio>
-            <el-radio :value="0">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="紧急">
-          <el-radio-group v-model="localTodo.urgent">
-            <el-radio :value="1">是</el-radio>
-            <el-radio :value="0">否</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="预计番茄钟">
-          <el-rate
-            v-model="localTodo.estimatedPomodoros"
-            :icons="icons"
-            :void-icon="Clock"
-            :colors="['#409eff', '#67c23a', '#FF9900']"
-            clearable
-          />
-        </el-form-item>
-      </el-form>
-      <span slot="footer" class="dialog-footer">
-        <el-button @click="closeDialog">取消</el-button>
-        <el-button type="primary" @click="saveTodo">确定</el-button>
-      </span>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, watch } from "vue";
 import { Clock } from "@element-plus/icons-vue";
+import {
+  // 紧急程度
+  URGENT_IMPORTANT, // 紧急 重要
+  URGENT_NOT_IMPORTANT, // 紧急 不重要
+  NOT_URGENT_IMPORTANT, // 不紧急 重要
+  NOT_URGENT_NOT_IMPORTANT, // 不紧急 不重要
+  URGENT_IMPORTANT_COLOR, // 紧急 重要color
+  URGENT_NOT_IMPORTANT_COLOR, // 紧急 不重要color
+  NOT_URGENT_IMPORTANT_COLOR, // 不紧急 重要color
+  NOT_URGENT_NOT_IMPORTANT_COLOR, // 不紧急 不重要color
+} from "@/constant/todo";
 
 const props = defineProps({
   todo: Object,
@@ -119,35 +93,34 @@ const showDialog = ref(props.visible);
 const icons = [Clock, Clock, Clock, Clock, Clock];
 const options = [
   {
-    value: "1",
+    value: URGENT_IMPORTANT,
     label1: "紧急",
     label2: "重要",
-    color: "#E47470",
+    color: URGENT_IMPORTANT_COLOR,
   },
   {
-    value: "2",
+    value: URGENT_NOT_IMPORTANT,
     label1: "紧急",
     label2: "不重要",
-    color:"#DCA550"
+    color: URGENT_NOT_IMPORTANT_COLOR,
   },
   {
-    value: "3",
+    value: NOT_URGENT_IMPORTANT,
     label1: "不紧急",
     label2: "重要",
-    color: "#7EC050",
+    color: NOT_URGENT_IMPORTANT_COLOR,
   },
   {
-    value: "4",
+    value: NOT_URGENT_NOT_IMPORTANT,
     label1: "不紧急",
     label2: "不重要",
-    color: "#5A9CF8",
+    color: NOT_URGENT_NOT_IMPORTANT_COLOR,
   },
 ];
 const localTodo = ref({
   id: null,
   text: "",
-  important: 0,
-  urgent: 0,
+  important: NOT_URGENT_NOT_IMPORTANT,
   estimatedPomodoros: 0, // 预计番茄钟
 });
 
@@ -178,8 +151,7 @@ function resetTodo() {
   localTodo.value = {
     id: null,
     text: "",
-    important: 0,
-    urgent: 0,
+    important: NOT_URGENT_NOT_IMPORTANT,
     estimatedPomodoros: 0,
   };
   dialogTitle.value = "添加新的待办事项";
@@ -201,7 +173,7 @@ function closeDialog() {
 .dialog-footer {
   text-align: right;
 }
-.select_label{
+.select_label {
   display: flex;
   justify-content: center;
   align-items: center;
