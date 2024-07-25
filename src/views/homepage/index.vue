@@ -1,18 +1,18 @@
 <template>
   <div>
     <div>待办事项列表</div>
-    <el-button type="primary" @click="openAddDialog">添加任务</el-button>
+    <!-- <el-button type="primary" @click="openAddDialog">添加任务</el-button> -->
     <AddPlan
       :visible="isAddDialogVisible"
       @close="closeAddDialog"
       @update="addNewTodo"
     />
-    <AddPlan
+    <!-- <AddPlan
       :visible="isEditDialogVisible"
       :todo="editingTodo"
       @close="closeEditDialog"
       @update="updateTodo"
-    />
+    /> -->
     <TodoList :todos="todos"  />
   </div>
 </template>
