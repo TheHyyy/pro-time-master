@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "deploy": "pnpm build && git add . && git commit -m 'Update project' && ggpush",
     "preview": "vite preview"
   },
   "dependencies": {
