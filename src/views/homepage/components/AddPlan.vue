@@ -7,7 +7,7 @@
     >
       <template #prepend>
         <el-select
-          v-model="localTodo.important"
+          v-model="localTodo.priority"
           placeholder="Select"
           size="large"
           style="width: 80px"
@@ -37,7 +37,7 @@
               <el-icon
                 :style="{
                   color: options.find(
-                    (item) => item.value == localTodo.important
+                    (item) => item.value == localTodo.priority
                   )?.color,
                 }"
                 ><MessageBox
@@ -120,7 +120,7 @@ const options = [
 const localTodo = ref({
   id: null,
   text: "",
-  important: NOT_URGENT_NOT_IMPORTANT,
+  priority: NOT_URGENT_NOT_IMPORTANT,
   estimatedPomodoros: 0, // 预计番茄钟
 });
 
@@ -151,7 +151,7 @@ function resetTodo() {
   localTodo.value = {
     id: null,
     text: "",
-    important: NOT_URGENT_NOT_IMPORTANT,
+    priority: NOT_URGENT_NOT_IMPORTANT,
     estimatedPomodoros: 0,
   };
   dialogTitle.value = "添加新的待办事项";
