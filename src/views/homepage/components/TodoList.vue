@@ -1,24 +1,55 @@
 <template>
   <div>
-    已完成：
-    <div v-for="todo in unfinList" class="todo_item">
-      <el-checkbox v-model="todo.done" />
-      <div @click="handleClickText" class="todo_item_text">{{ todo.text }}</div>
-    </div>
-    未完成：
-    <div v-for="todo in completedList" class="todo_item">
-      <el-checkbox v-model="todo.done" />
-      <div :class="['todo_item_text', { todo_item_text_completed: todo.done }]">
-        {{ todo.text }}
+    <div class="todo_box">
+      <div
+        v-for="todo in unfinList"
+        :key="todo.id"
+        class="todo_item"
+        @click="handleClickText(todo)"
+      >
+        <el-checkbox v-model="todo.done" @click.stop="playSound" />
+        <div class="todo_item_text">
+          {{ todo.text }}
+        </div>
       </div>
     </div>
-    showDrawer:{{ showDrawer }}
-    <TodoDrawer :visible="showDrawer" />
+    <div
+      class="show_com_todo"
+      @click="() => (showCompletedTodo = !showCompletedTodo)"
+    >
+      <div class="show_com_todo_button" v-show="showCompletedTodo">
+        隐藏已完成任务 <el-icon><ArrowUp /></el-icon>
+      </div>
+      <div class="show_com_todo_button" v-show="!showCompletedTodo">
+        显示未完成任务
+        <el-icon><ArrowDown /></el-icon>
+      </div>
+    </div>
+    <div v-show="showCompletedTodo" class="todo_box">
+      <div
+        v-for="todo in completedList"
+        :key="todo.id"
+        class="todo_item todo_item_completed"
+      >
+        <el-checkbox v-model="todo.done" />
+        <div
+          :class="['todo_item_text', { todo_item_text_completed: todo.done }]"
+        >
+          {{ todo.text }}
+        </div>
+      </div>
+    </div>
+    <TodoDrawer
+      :visible="showDrawer"
+      @update-visible="updateDrawerVisible"
+      :data="currentTodoData"
+      @delete="handleDeleteTodo"
+    />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import TodoDrawer from "./TodoDrawer.vue";
 import {
   // 紧急程度
@@ -33,6 +64,7 @@ import {
 } from "@/constant/todo";
 
 const todos = ref([]);
+const showCompletedTodo = ref(false);
 // 从 localStorage 读取数据
 function loadTodos() {
   const storedTodos = localStorage.getItem("todos");
@@ -40,14 +72,18 @@ function loadTodos() {
     todos.value = JSON.parse(storedTodos);
   }
 }
+
 // 已完成list
 const unfinList = computed(() => {
   return todos.value.filter((todo) => !todo.done);
 });
+
 // 已完成list
 const completedList = computed(() => {
   return todos.value.filter((todo) => todo.done);
 });
+
+// 监听todos变化
 watch(
   todos,
   (newTodos) => {
@@ -58,16 +94,44 @@ watch(
   },
   { deep: true }
 );
+
 const showDrawer = ref(false);
-const handleClickText = () => {
+const currentTodoData = ref({});
+const handleClickText = (todo) => {
+  // 记录当前数据
+  currentTodoData.value = todo;
+  // 打开抽屉
   showDrawer.value = true;
-}
+};
+
+// 抽屉中触发更新visible
+const updateDrawerVisible = (value) => {
+  showDrawer.value = value;
+  console.log("🚀 ~ updateDrawerVisible ~ showDrawer.value:", showDrawer.value);
+};
+
+// 播放音效
+const playSound = () => {
+  const audio = new Audio("/check-sound.mp3");
+  console.log("🚀 ~ playSound ~ audio:", audio);
+  audio.play();
+};
+// 删除todo
+const handleDeleteTodo = (id) => {
+  console.log("🚀 ~ handleDeleteTodo ~ id:", id);
+  todos.value = todos.value.filter((todo) => todo.id !== id);
+  showDrawer.value = false;
+  currentTodoData.value = {};
+};
 onMounted(() => {
   loadTodos();
 });
 </script>
 
 <style lang="scss" scoped>
+.todo_box {
+  margin-top: 12px;
+}
 .todo_item {
   display: flex;
   align-items: center;
@@ -75,16 +139,40 @@ onMounted(() => {
   padding: 10px;
   background: #fff;
   border-radius: 5px;
+  cursor: pointer;
+
   .todo_item_text {
     margin-left: 10px;
     color: #333;
     font-size: 16px;
-    cursor: pointer;
   }
+
   .todo_item_text_completed {
     text-decoration: line-through;
     color: #999;
     cursor: default;
   }
+}
+.todo_item_completed {
+  cursor: default;
+}
+/* 显示已完成todo */
+.show_com_todo {
+  margin-top: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.show_com_todo_button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  color: #999;
+  padding: 2px 16px;
+  font-size: 14px;
 }
 </style>

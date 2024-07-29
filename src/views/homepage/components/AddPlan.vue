@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class>
     <el-input
       v-model="localTodo.text"
       placeholder="在'任务'中添加一个任务，按'回车'键保存"

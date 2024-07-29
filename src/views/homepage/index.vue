@@ -1,6 +1,5 @@
 <template>
   <div class="todo_list_page">
-    <div>待办事项列表</div>
     <AddPlan
       :visible="isAddDialogVisible"
       @close="closeAddDialog"
