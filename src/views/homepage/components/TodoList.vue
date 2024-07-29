@@ -1,19 +1,19 @@
 <template>
   <div>
     已完成：
-  <div v-for="todo in unfinList">
-    <el-checkbox v-model="todo.done" />
-    <span>{{ todo.text }}</span>
-    <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
-    <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
-  </div>
-  未完成：
-  <div v-for="todo in completedList">
-    <el-checkbox v-model="todo.done" />
-    <span :class="{ completed: todo.done }">{{ todo.text }}</span>
-    <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
-    <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
-  </div>
+    <div v-for="todo in unfinList">
+      <el-checkbox v-model="todo.done" />
+      <span>{{ todo.text }}</span>
+      <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
+      <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
+    </div>
+    未完成：
+    <div v-for="todo in completedList">
+      <el-checkbox v-model="todo.done" />
+      <span :class="{ completed: todo.done }">{{ todo.text }}</span>
+      <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
+      <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
+    </div>
   </div>
 </template>
 
@@ -43,12 +43,21 @@ function loadTodos() {
 // 已完成list
 const unfinList = computed(() => {
   return todos.value.filter((todo) => !todo.done);
-})
+});
 // 已完成list
 const completedList = computed(() => {
   return todos.value.filter((todo) => todo.done);
-})
-
+});
+watch(
+  todos,
+  (newTodos) => {
+    localStorage.setItem("todos", JSON.stringify(newTodos));
+    setTimeout(() => {
+      loadTodos();
+    }, 0);
+  },
+  { deep: true }
+);
 const showDrawer = ref(false);
 onMounted(() => {
   loadTodos();

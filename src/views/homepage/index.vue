@@ -38,7 +38,7 @@ function closeAddDialog() {
 
 function addNewTodo(newTodo) {
   newTodo.id = Date.now(); // Assign a unique ID
-  todos.value.push(newTodo);
+  todos.value.unshift(newTodo);
   isAddDialogVisible.value = false;
 }
 
