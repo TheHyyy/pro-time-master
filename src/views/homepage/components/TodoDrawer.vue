@@ -1,15 +1,33 @@
 <template>
-    <el-drawer :visible.sync="visible" title="任务详情" direction="rtl">
-      <p>任务内容: {{ todo.text }}</p>
-      <p>完成状态: {{ todo.done ? '已完成' : '未完成' }}</p>
-      <el-button @click="$emit('close')">关闭</el-button>
+  <div>
+    visible:{{ visible }}
+    <el-drawer
+      :width="340"
+      :model-value="visible"
+      @ok="handleOk"
+      @cancel="handleCancel"
+      unmountOnClose
+    >
+      <div>
+        You can customize modal body text by the current situation. This modal
+        will be closed immediately once you press the OK button.
+      </div>
     </el-drawer>
-  </template>
-  
-  <script setup>
-  const props = defineProps({
-    visible: Boolean,
-    todo: Object
-  });
-  </script>
-  
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  visible: Boolean,
+});
+
+const handleClick = () => {
+  visible.value = true;
+};
+const handleOk = () => {
+  visible.value = false;
+};
+const handleCancel = () => {
+  visible.value = false;
+};
+</script>

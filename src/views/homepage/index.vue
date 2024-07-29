@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="todo_list_page">
     <div>待办事项列表</div>
     <AddPlan
       :visible="isAddDialogVisible"
@@ -79,6 +79,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.todo_list_page{
+  background: #F7F7FA;
+  min-height: 100vh;
+  padding: 20px;
+}
 /* 你的样式可以在这里添加 */
 .completed {
   text-decoration: line-through;

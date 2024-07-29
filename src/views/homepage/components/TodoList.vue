@@ -1,19 +1,19 @@
 <template>
   <div>
     已完成：
-    <div v-for="todo in unfinList">
+    <div v-for="todo in unfinList" class="todo_item">
       <el-checkbox v-model="todo.done" />
-      <span>{{ todo.text }}</span>
-      <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
-      <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
+      <div @click="handleClickText" class="todo_item_text">{{ todo.text }}</div>
     </div>
     未完成：
-    <div v-for="todo in completedList">
+    <div v-for="todo in completedList" class="todo_item">
       <el-checkbox v-model="todo.done" />
-      <span :class="{ completed: todo.done }">{{ todo.text }}</span>
-      <el-button @click="showDrawer = true" type="primary" icon="Edit" circle />
-      <el-button @click="$emit('remove')" type="danger" icon="Delete" circle />
+      <div :class="['todo_item_text', { todo_item_text_completed: todo.done }]">
+        {{ todo.text }}
+      </div>
     </div>
+    showDrawer:{{ showDrawer }}
+    <TodoDrawer :visible="showDrawer" />
   </div>
 </template>
 
@@ -59,14 +59,32 @@ watch(
   { deep: true }
 );
 const showDrawer = ref(false);
+const handleClickText = () => {
+  showDrawer.value = true;
+}
 onMounted(() => {
   loadTodos();
 });
 </script>
 
-<style scoped>
-.completed {
-  text-decoration: line-through;
-  color: #999;
+<style lang="scss" scoped>
+.todo_item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 5px;
+  .todo_item_text {
+    margin-left: 10px;
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .todo_item_text_completed {
+    text-decoration: line-through;
+    color: #999;
+    cursor: default;
+  }
 }
 </style>
