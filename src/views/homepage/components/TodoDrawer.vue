@@ -7,6 +7,7 @@
       @ok="handleOk"
       @cancel="handleCancel"
       unmountOnClose
+      :modal="false"
     >
       <div>
         You can customize modal body text by the current situation. This modal
