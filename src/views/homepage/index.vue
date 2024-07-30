@@ -81,7 +81,7 @@ onMounted(() => {
 .todo_list_page{
   background: #F7F7FA;
   min-height: 100vh;
-  padding: 20px;
+  padding: 20px 20vw;
 }
 /* 你的样式可以在这里添加 */
 .completed {

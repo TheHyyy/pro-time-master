@@ -14,6 +14,7 @@
       </div>
     </div>
     <div
+      v-if="completedList.length"
       class="show_com_todo"
       @click="() => (showCompletedTodo = !showCompletedTodo)"
     >
