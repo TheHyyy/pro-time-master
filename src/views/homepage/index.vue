@@ -1,11 +1,34 @@
 <template>
   <div class="todo_list_page">
-    <AddPlan
-      :visible="isAddDialogVisible"
-      @close="closeAddDialog"
-      @update="addNewTodo"
-    />
-    <TodoList :todos="todos"  />
+    <div class="common-layout">
+      <el-container>
+        <el-header></el-header>
+        <el-container>
+          <el-aside width="200px">
+            <div class="aside">
+              <div class="aside_list">
+                <div class="aside_list_item">
+                  <div class="aside_list_item_icon">
+                    <el-icon color="#d9f3e2;"><Sunny /></el-icon>
+                  </div>
+                  <div class="aside_list_item_text">所有</div>
+                </div>
+              </div>
+            </div>
+          </el-aside>
+          <el-main>
+            <div class="main">
+              <AddPlan
+                :visible="isAddDialogVisible"
+                @close="closeAddDialog"
+                @update="addNewTodo"
+              />
+              <TodoList :todos="todos" />
+            </div>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
   </div>
 </template>
 
@@ -13,6 +36,7 @@
 import { ref, onMounted, watch } from "vue";
 import AddPlan from "./components/AddPlan.vue";
 import TodoList from "./components/TodoList.vue";
+import { Sunny } from "@element-plus/icons-vue";
 
 const todos = ref([]);
 const isAddDialogVisible = ref(false);
@@ -78,14 +102,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.todo_list_page{
-  background: #F7F7FA;
+.todo_list_page {
   min-height: 100vh;
-  padding: 20px 20vw;
 }
-/* 你的样式可以在这里添加 */
-.completed {
-  text-decoration: line-through;
-  color: #999;
+.main {
+  background: #f7f7fa;
+}
+
+.aside_list_item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+
+  background: #f3f3f3;
+  border-radius: 12px;
+  cursor: pointer;
 }
 </style>
