@@ -1,5 +1,6 @@
 <template>
   <div>
+    todos:{{todos}}
     <!-- 任务输入部分 -->
     <el-input
       v-model="localTodo.text"
@@ -82,7 +83,7 @@
     </div>
 
     <div
-      v-if="completedList.length"
+      v-if="completedList && completedList.length"
       class="show_com_todo"
       @click="() => (showCompletedTodo = !showCompletedTodo)"
     >
@@ -174,12 +175,13 @@ const options = [
 ];
 
 // 计算属性
-const unfinList = computed(() => todos.value.filter((todo) => !todo.done));
-const completedList = computed(() => todos.value.filter((todo) => todo.done));
+const unfinList = computed(() => todos.value?.filter((todo) => !todo.done));
+const completedList = computed(() => todos.value?.filter((todo) => todo.done));
 
 // 从 localStorage 加载数据
 function loadTodos() {
   const storedTodos = localStorage.getItem("todos");
+  console.log("🚀 ~ loadTodos ~ storedTodos:", storedTodos);
   if (storedTodos) {
     todos.value = JSON.parse(storedTodos);
   }
@@ -189,13 +191,17 @@ function loadTodos() {
 watch(
   todos,
   (newTodos) => {
-    localStorage.setItem("todos", JSON.stringify(newTodos));
+    console.log("🚀 ~ newTodos:", newTodos);
+    if (newTodos) {
+      localStorage.setItem("todos", JSON.stringify(newTodos));
+    }
   },
   { deep: true }
 );
 
 // 处理任务的保存
 function saveTodo() {
+  console.log("🚀 ~ todos.value:", todos.value)
   if (localTodo.value.text.trim()) {
     todos.value.push({ ...localTodo.value, id: Date.now(), done: false });
     resetTodo();
@@ -238,8 +244,9 @@ const handleDeleteTodo = (id) => {
 
 // 获取任务数据
 async function getTodo() {
-  const res = await getTodos();
-  todos.value = res.data;
+  // const res = await getTodos();
+  // console.log("🚀 ~ res:", res)
+  // todos.value = res.data;
 }
 
 // 挂载时加载任务数据
