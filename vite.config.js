@@ -52,6 +52,8 @@ export default defineConfig({
         },
         ElementPlusResolver(),
       ],
+        dts: './auto-import.d.js',
+        dirs: ["src/stores/**", "src/composables/**", "src/api/**"],
     }),
     // 自动引入组件
     Components({
