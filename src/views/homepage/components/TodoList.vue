@@ -76,6 +76,7 @@ import {
   NOT_URGENT_IMPORTANT_COLOR, // 不紧急 重要color
   NOT_URGENT_NOT_IMPORTANT_COLOR, // 不紧急 不重要color
 } from "@/constant/todo";
+import { getTodos } from "@/api/todo";
 
 const todos = ref([]);
 const showCompletedTodo = ref(false);
@@ -137,8 +138,14 @@ const handleDeleteTodo = (id) => {
   showDrawer.value = false;
   currentTodoData.value = {};
 };
+async function getTodo() {
+  const res = await getTodos();
+  console.log("🚀 ~ getTodos ~ res:", res)
+  todos.value = res.data;
+}
 onMounted(() => {
   loadTodos();
+  getTodo()
 });
 </script>
 
