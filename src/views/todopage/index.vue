@@ -1,6 +1,5 @@
 <template>
   <div>
-    todos:{{todos}}
     <!-- 任务输入部分 -->
     <el-input
       v-model="localTodo.text"
@@ -244,8 +243,8 @@ const handleDeleteTodo = (id) => {
 
 // 获取任务数据
 async function getTodo() {
-  // const res = await getTodos();
-  // console.log("🚀 ~ res:", res)
+  const res = await getTodos();
+  console.log("🚀 ~ res:", res)
   // todos.value = res.data;
 }
 
