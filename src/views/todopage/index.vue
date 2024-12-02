@@ -2,7 +2,7 @@
   <div>
     <!-- 任务输入部分 -->
     <el-input
-      v-model="localTodo.text"
+      v-model="localTodo.title"
       placeholder="在'任务'中添加一个任务，按'回车'键保存"
       @keyup.enter="saveTodo"
     >
@@ -72,9 +72,9 @@
     <div class="todo_box">
       <div v-for="todo in unfinList" :key="todo.id" class="todo_item">
         <div class="todo_item_content">
-          <el-checkbox v-model="todo.done" @click.stop="playSound" />
-          <div class="todo_item_text" @click="handleClickText(todo)">
-            {{ todo.text }}
+          <el-checkbox :v-model="todo.completed" @click="playSound(todo)" />
+          <div class="todo_item_title" @click="handleClickTitle(todo)">
+            {{ todo.title }}
           </div>
           <div class="todo_item_tomato"></div>
         </div>
@@ -97,11 +97,14 @@
     <div v-show="showCompletedTodo" class="todo_box">
       <div v-for="todo in completedList" :key="todo.id" class="todo_item">
         <div class="todo_item_content">
-          <el-checkbox v-model="todo.done" />
+          <el-checkbox v-model="todo.completed" @click="playSound(todo)" />
           <div
-            :class="['todo_item_text', { todo_item_text_completed: todo.done }]"
+            :class="[
+              'todo_item_title',
+              { todo_item_title_completed: todo.completed },
+            ]"
           >
-            {{ todo.text }}
+            {{ todo.title }}
           </div>
         </div>
       </div>
@@ -131,7 +134,7 @@ import {
   NOT_URGENT_IMPORTANT_COLOR,
   NOT_URGENT_NOT_IMPORTANT_COLOR,
 } from "@/constant/todo";
-import { getTodos } from "@/api/todo";
+import { getTodos, addTodo, updateTodo } from "@/api/todo";
 
 // 数据和状态管理
 const todos = ref([]);
@@ -140,7 +143,7 @@ const showDrawer = ref(false);
 const currentTodoData = ref({});
 const localTodo = ref({
   id: null,
-  text: "",
+  title: "",
   priority: NOT_URGENT_NOT_IMPORTANT,
   estimatedPomodoros: 0,
 });
@@ -174,13 +177,17 @@ const options = [
 ];
 
 // 计算属性
-const unfinList = computed(() => todos.value?.filter((todo) => !todo.done));
-const completedList = computed(() => todos.value?.filter((todo) => todo.done));
+const unfinList = computed(() =>
+  todos.value?.filter((todo) => !todo.completed)
+);
+const completedList = computed(() =>
+  todos.value?.filter((todo) => todo.completed)
+);
 
 // 从 localStorage 加载数据
 function loadTodos() {
   const storedTodos = localStorage.getItem("todos");
-  console.log("🚀 ~ loadTodos ~ storedTodos:", storedTodos);
+  // console.log("🚀 ~ loadTodos ~ storedTodos:", storedTodos);
   if (storedTodos) {
     todos.value = JSON.parse(storedTodos);
   }
@@ -190,7 +197,7 @@ function loadTodos() {
 watch(
   todos,
   (newTodos) => {
-    console.log("🚀 ~ newTodos:", newTodos);
+    // console.log("🚀 ~ newTodos:", newTodos);
     if (newTodos) {
       localStorage.setItem("todos", JSON.stringify(newTodos));
     }
@@ -199,10 +206,17 @@ watch(
 );
 
 // 处理任务的保存
-function saveTodo() {
-  console.log("🚀 ~ todos.value:", todos.value)
-  if (localTodo.value.text.trim()) {
-    todos.value.push({ ...localTodo.value, id: Date.now(), done: false });
+async function saveTodo() {
+  // console.log("🚀 ~ todos.value:", todos.value);
+  let title = localTodo.value.title;
+  if (title.trim()) {
+    todos.value.push({ ...localTodo.value, id: Date.now(), completed: false });
+
+    const res = await addTodo({
+      title: title,
+    });
+    // console.log("🚀 ~ res:", res);
+    getTodo(); //重新获取
     resetTodo();
   }
 }
@@ -211,20 +225,28 @@ function saveTodo() {
 function resetTodo() {
   localTodo.value = {
     id: null,
-    text: "",
+    title: "",
     priority: NOT_URGENT_NOT_IMPORTANT,
     estimatedPomodoros: 0,
   };
 }
 
 // 播放音效
-const playSound = () => {
+const playSound = async (todo) => {
+  console.log("🚀 ~ playSound ~ todo:", todo);
+  const res = await updateTodo({
+    id: todo.id,
+    completed: !todo.completed,
+  });
+  console.log("🚀 ~ playSound ~ res:", res);
+  getTodo(); //重新获取
+
   const audio = new Audio("/check-sound.mp3");
   audio.play();
 };
 
 // 处理任务文本点击，打开任务详情
-const handleClickText = (todo) => {
+const handleClickTitle = (todo) => {
   currentTodoData.value = todo;
   showDrawer.value = true;
 };
@@ -244,8 +266,8 @@ const handleDeleteTodo = (id) => {
 // 获取任务数据
 async function getTodo() {
   const res = await getTodos();
-  console.log("🚀 ~ res:", res)
-  // todos.value = res.data;
+  // console.log("🚀 ~ res:", res);
+  todos.value = res.data;
 }
 
 // 挂载时加载任务数据
@@ -272,15 +294,15 @@ onMounted(() => {
     display: flex;
     align-items: center;
     padding: 10px;
-    .todo_item_text {
+    .todo_item_title {
       margin-left: 10px;
       color: #333;
       font-size: 16px;
       cursor: pointer;
       min-width: 200px;
     }
-    .todo_item_text_completed {
-      text-decoration: line-through;
+    .todo_item_title_completed {
+      title-decoration: line-through;
       color: #999;
       cursor: default;
     }
