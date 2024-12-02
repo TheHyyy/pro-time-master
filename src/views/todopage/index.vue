@@ -199,14 +199,20 @@ watch(
 // 处理任务的保存
 async function saveTodo() {
   let title = localTodo.value.title;
-  if (title.trim()) {
-    todos.value.push({ ...localTodo.value, id: Date.now(), completed: false });
-
-    const res = await addTodo({
-      title: title,
-    });
-    getTodo(); //重新获取
-    resetTodo();
+  if (!title.trim()) {
+    return;
+  }
+  const newTodo = { ...localTodo.value };
+  todos.value.push(newTodo); // 本地更新任务列表
+  try {
+    const res = await addTodo({ title });
+    if (res.code === 200) {
+      getTodos();
+      resetTodo();
+    }
+  } catch (error) {
+    console.error("添加任务失败", error);
+    alert("添加任务失败，请稍后再试");
   }
 }
 
@@ -219,35 +225,36 @@ function resetTodo() {
     estimatedPomodoros: 0,
   };
 }
-
-const handleUpdateTodo = async (todo) => {
+const updateTodoStatus = async (todo, targetCompleted) => {
   try {
-    const targetCompleted = !todo.completed; // 保存目标状态
-    todo.completed = targetCompleted; // 直接设置目标状态
-
-    // 更新服务器数据
-    const res = await updateTodo({
-      id: todo.id,
-      completed: targetCompleted,
-    });
-    console.log("🚀 ~ handleUpdateTodo ~ res:", res);
-
+    const res = await updateTodo({ id: todo.id, completed: targetCompleted });
     if (res.code !== 200) {
-      // 如果更新失败，恢复状态
-      todo.completed = !targetCompleted;
-      alert("任务更新失败，请稍后再试");
-      return;
+      throw new Error("更新任务失败");
     }
-    // 更新成功，重新获取任务列表
-    getTodo();
-    // 播放音效
-    const audio = new Audio("/check-sound.mp3");
-    audio.play();
+    return res;
   } catch (error) {
-    // 处理错误
-    console.error("更新任务失败", error);
-    todo.completed = !targetCompleted; // 恢复状态
-    alert("网络错误，请检查网络连接");
+    console.error(error);
+    throw error;
+  }
+};
+let isAudioPlayed = false;
+const handleUpdateTodo = async (todo) => {
+  const targetCompleted = !todo.completed;
+  todo.completed = targetCompleted; // 乐观更新
+  try {
+    await updateTodoStatus(todo, targetCompleted);
+    getTodo(); // 重新获取任务列表
+    if (!isAudioPlayed) {
+      const audio = new Audio("/check-sound.mp3");
+      audio.play();
+      isAudioPlayed = true;
+      setTimeout(() => {
+        isAudioPlayed = false;
+      }, 500); // 500ms后允许再次播放音效
+    }
+  } catch (error) {
+    todo.completed = !targetCompleted; // 恢复任务状态
+    alert("更新任务失败，请稍后再试");
   }
 };
 
