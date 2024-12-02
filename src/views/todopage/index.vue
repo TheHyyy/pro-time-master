@@ -220,16 +220,35 @@ function resetTodo() {
   };
 }
 
-// 播放音效
 const handleUpdateTodo = async (todo) => {
-  const res = await updateTodo({
-    id: todo.id,
-    completed: !todo.completed,
-  });
-  getTodo(); //重新获取
+  try {
+    const targetCompleted = !todo.completed; // 保存目标状态
+    todo.completed = targetCompleted; // 直接设置目标状态
 
-  const audio = new Audio("/check-sound.mp3");
-  audio.play();
+    // 更新服务器数据
+    const res = await updateTodo({
+      id: todo.id,
+      completed: targetCompleted,
+    });
+    console.log("🚀 ~ handleUpdateTodo ~ res:", res);
+
+    if (res.code !== 200) {
+      // 如果更新失败，恢复状态
+      todo.completed = !targetCompleted;
+      alert("任务更新失败，请稍后再试");
+      return;
+    }
+    // 更新成功，重新获取任务列表
+    getTodo();
+    // 播放音效
+    const audio = new Audio("/check-sound.mp3");
+    audio.play();
+  } catch (error) {
+    // 处理错误
+    console.error("更新任务失败", error);
+    todo.completed = !targetCompleted; // 恢复状态
+    alert("网络错误，请检查网络连接");
+  }
 };
 
 // 处理任务文本点击，打开任务详情
