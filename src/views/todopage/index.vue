@@ -80,7 +80,7 @@
     </div>
 
     <div
-      v-if="completedList && completedList.length"
+      v-if="completedList?.length"
       class="show_com_todo"
       @click="() => (showCompletedTodo = !showCompletedTodo)"
     >
@@ -88,11 +88,11 @@
         隐藏已完成任务 <el-icon><ArrowUp /></el-icon>
       </div>
       <div class="show_com_todo_button" v-show="!showCompletedTodo">
-        显示未完成任务 <el-icon><ArrowDown /></el-icon>
+        显示已完成任务 <el-icon><ArrowDown /></el-icon>
       </div>
     </div>
 
-    <div v-show="showCompletedTodo" class="todo_box">
+    <div v-show="showCompletedTodo && completedList.length" class="todo_box">
       <TodoItem
         v-for="todo in completedList"
         :key="todo.id"
@@ -310,5 +310,10 @@ onMounted(() => {
   color: #999;
   padding: 2px 16px;
   font-size: 14px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #f5f5f5;
+  }
 }
 </style>
