@@ -1,7 +1,7 @@
 <template>
   <div class="todo_item">
-    todo.completed:{{ todo.completed }}
-    <el-checkbox :v-model="todo.completed" @click="handleCheckboxClick" />
+    <!-- 使用 v-model 双向绑定 todo.completed -->
+    <el-checkbox v-model="todo.completed" @click="handleCheckboxClick" />
     <div
       :class="[
         'todo_item_title',
@@ -27,10 +27,9 @@ const props = defineProps({
 
 const emit = defineEmits(["update-status", "click-title"]);
 
-const handleCheckboxClick = (checked) => {
-  // 通知父组件更新任务状态
-  // emit("update", props.todo);
-  emit("update-status", { ...props.todo, completed: checked }); // 更新 todo.completed
+const handleCheckboxClick = () => {
+  // 当复选框点击时，通知父组件更新 todos
+  emit("update-status", props.todo); // 将更新后的 todo 传递给父组件
 };
 
 const handleTitleClick = () => {
