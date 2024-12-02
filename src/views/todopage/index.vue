@@ -70,15 +70,13 @@
 
     <!-- 任务展示部分 -->
     <div class="todo_box">
-      <div v-for="todo in unfinList" :key="todo.id" class="todo_item">
-        <div class="todo_item_content">
-          <el-checkbox :v-model="todo.completed" @click="playSound(todo)" />
-          <div class="todo_item_title" @click="handleClickTitle(todo)">
-            {{ todo.title }}
-          </div>
-          <div class="todo_item_tomato"></div>
-        </div>
-      </div>
+      <TodoItem
+        v-for="todo in unfinList"
+        :key="todo.id"
+        :todo="todo"
+        @update-status="handleUpdateTodo"
+        @click-title="handleClickTitle"
+      />
     </div>
 
     <div
@@ -95,19 +93,13 @@
     </div>
 
     <div v-show="showCompletedTodo" class="todo_box">
-      <div v-for="todo in completedList" :key="todo.id" class="todo_item">
-        <div class="todo_item_content">
-          <el-checkbox v-model="todo.completed" @click="playSound(todo)" />
-          <div
-            :class="[
-              'todo_item_title',
-              { todo_item_title_completed: todo.completed },
-            ]"
-          >
-            {{ todo.title }}
-          </div>
-        </div>
-      </div>
+      <TodoItem
+        v-for="todo in completedList"
+        :key="todo.id"
+        :todo="todo"
+        @update-status="handleUpdateTodo"
+        @click-title="handleClickTitle"
+      />
     </div>
 
     <!-- 任务详情抽屉 -->
@@ -123,6 +115,7 @@
 <script setup>
 import { computed, ref, watch, onMounted } from "vue";
 import TodoDrawer from "./components/TodoDrawer.vue";
+import TodoItem from "@/components/TodoItem.vue";
 import { Clock, ArrowDown, ArrowUp, MessageBox } from "@element-plus/icons-vue";
 import {
   URGENT_IMPORTANT,
@@ -187,7 +180,6 @@ const completedList = computed(() =>
 // 从 localStorage 加载数据
 function loadTodos() {
   const storedTodos = localStorage.getItem("todos");
-  // console.log("🚀 ~ loadTodos ~ storedTodos:", storedTodos);
   if (storedTodos) {
     todos.value = JSON.parse(storedTodos);
   }
@@ -197,7 +189,6 @@ function loadTodos() {
 watch(
   todos,
   (newTodos) => {
-    // console.log("🚀 ~ newTodos:", newTodos);
     if (newTodos) {
       localStorage.setItem("todos", JSON.stringify(newTodos));
     }
@@ -207,7 +198,6 @@ watch(
 
 // 处理任务的保存
 async function saveTodo() {
-  // console.log("🚀 ~ todos.value:", todos.value);
   let title = localTodo.value.title;
   if (title.trim()) {
     todos.value.push({ ...localTodo.value, id: Date.now(), completed: false });
@@ -215,7 +205,6 @@ async function saveTodo() {
     const res = await addTodo({
       title: title,
     });
-    // console.log("🚀 ~ res:", res);
     getTodo(); //重新获取
     resetTodo();
   }
@@ -232,13 +221,11 @@ function resetTodo() {
 }
 
 // 播放音效
-const playSound = async (todo) => {
-  console.log("🚀 ~ playSound ~ todo:", todo);
+const handleUpdateTodo = async (todo) => {
   const res = await updateTodo({
     id: todo.id,
     completed: !todo.completed,
   });
-  console.log("🚀 ~ playSound ~ res:", res);
   getTodo(); //重新获取
 
   const audio = new Audio("/check-sound.mp3");
@@ -266,7 +253,6 @@ const handleDeleteTodo = (id) => {
 // 获取任务数据
 async function getTodo() {
   const res = await getTodos();
-  // console.log("🚀 ~ res:", res);
   todos.value = res.data;
 }
 
@@ -280,33 +266,6 @@ onMounted(() => {
 <style lang="scss" scoped>
 .todo_box {
   margin-top: 12px;
-}
-.todo_item {
-  display: flex;
-  align-items: center;
-  background: #fff;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  height: 40px;
-  overflow: hidden;
-  border: 1px solid #eee;
-  .todo_item_content {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    .todo_item_title {
-      margin-left: 10px;
-      color: #333;
-      font-size: 16px;
-      cursor: pointer;
-      min-width: 200px;
-    }
-    .todo_item_title_completed {
-      title-decoration: line-through;
-      color: #999;
-      cursor: default;
-    }
-  }
 }
 .show_com_todo {
   margin-top: 10px;
