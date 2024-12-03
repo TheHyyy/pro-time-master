@@ -76,6 +76,7 @@
         :todo="todo"
         @update-status="handleUpdateTodo"
         @click-title="handleClickTitle"
+        @delete="handleDeleteTodo"
       />
     </div>
 
@@ -99,6 +100,7 @@
         :todo="todo"
         @update-status="handleUpdateTodo"
         @click-title="handleClickTitle"
+        @delete="handleDeleteTodo"
       />
     </div>
 
@@ -127,7 +129,7 @@ import {
   NOT_URGENT_IMPORTANT_COLOR,
   NOT_URGENT_NOT_IMPORTANT_COLOR,
 } from "@/constant/todo";
-import { getTodos, addTodo, updateTodo } from "@/api/todo";
+import { fetchTodos, createTodo, updateTodo, removeTodo } from "@/api/todo";
 
 // 数据和状态管理
 const todos = ref([]);
@@ -205,11 +207,15 @@ async function saveTodo() {
   const newTodo = { ...localTodo.value };
   todos.value.push(newTodo); // 本地更新任务列表
   try {
-    const res = await addTodo({ title });
-    if (res.code === 200) {
-      getTodos();
-      resetTodo();
+    const res = await createTodo({ title });
+    console.log("🚀 ~ res:", res);
+    if (res.code !== 200) {
+      console.log("添加任务失败");
+      return;
     }
+    getTodo();
+    resetTodo();
+    localTodo.value.title = "";
   } catch (error) {
     console.error("添加任务失败", error);
     alert("添加任务失败，请稍后再试");
@@ -263,22 +269,28 @@ const handleClickTitle = (todo) => {
   currentTodoData.value = todo;
   showDrawer.value = true;
 };
+async function handleDeleteTodo(todo) {
+  console.log("🚀 ~ todo:", todo);
+  try {
+    const res = await removeTodo(todo.id);
+    if (res.code !== 200) {
+      throw new Error("删除任务失败");
+    }
+    getTodo();
+  } catch (error) {
+    console.error(error);
+    alert("删除任务失败，请稍后再试");
+  }
+}
 
 // 更新抽屉的可见性
 const updateDrawerVisible = (value) => {
   showDrawer.value = value;
 };
 
-// 删除任务
-const handleDeleteTodo = (id) => {
-  todos.value = todos.value.filter((todo) => todo.id !== id);
-  showDrawer.value = false;
-  currentTodoData.value = {};
-};
-
 // 获取任务数据
 async function getTodo() {
-  const res = await getTodos();
+  const res = await fetchTodos();
   todos.value = res.data;
 }
 

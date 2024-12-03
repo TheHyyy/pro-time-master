@@ -6,7 +6,11 @@
 export {}
 declare global {
   const addTodo: typeof import('./src/api/todo.js')['addTodo']
+  const createTodo: typeof import('./src/api/todo.js')['createTodo']
+  const deleteTodo: typeof import('./src/api/todo.js')['deleteTodo']
+  const fetchTodos: typeof import('./src/api/todo.js')['fetchTodos']
   const getTodos: typeof import('./src/api/todo.js')['getTodos']
   const http: typeof import('./src/composables/http.js')['http']
+  const removeTodo: typeof import('./src/api/todo.js')['removeTodo']
   const updateTodo: typeof import('./src/api/todo.js')['updateTodo']
 }
