@@ -75,11 +75,10 @@ async function getTodo() {
 async function saveTodo(newTodo) {
   try {
     const res = await createTodo(newTodo);
-    if (res.code === 200) {
-      getTodo();
-    } else {
+    if (!res.success) {
       throw new Error("保存失败");
     }
+    getTodo();
   } catch (error) {
     console.error(error);
     alert("保存任务失败，请稍后重试");
@@ -90,7 +89,9 @@ async function handleUpdateTodo(todo) {
   try {
     todo.completed = !todo.completed;
     const res = await updateTodo(todo);
-    if (res.code !== 200) throw new Error("更新任务失败");
+    if (!res.success) {
+      throw new Error("更新任务失败");
+    }
     getTodo();
   } catch (error) {
     alert("更新任务失败，请稍后重试");
@@ -105,11 +106,10 @@ function handleClickTitle(todo) {
 async function handleDeleteTodo(todo) {
   try {
     const res = await removeTodo(todo.id);
-    if (res.code === 200) {
-      getTodo();
-    } else {
+    if (!res.success) {
       throw new Error("删除任务失败");
     }
+    getTodo();
   } catch (error) {
     console.error(error);
     alert("删除任务失败，请稍后重试");
