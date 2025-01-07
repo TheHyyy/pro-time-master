@@ -86,10 +86,11 @@ const handlePomodoroComplete = async () => {
       completedPomodoros: (props.data.completedPomodoros || 0) + 1
     };
     
-    await updateTodo(updatedTodo);
-    emit('update', updatedTodo);
-    
-    ElMessage.success('完成一个番茄钟！');
+    const response = await updateTodo(updatedTodo);
+    if (response.success) {
+      emit('update', response.data);
+      ElMessage.success('完成一个番茄钟！');
+    }
   } catch (error) {
     ElMessage.error('更新失败');
   }

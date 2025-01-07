@@ -14,4 +14,5 @@ declare global {
   const http: typeof import('./src/composables/http.js')['http']
   const removeTodo: typeof import('./src/api/todo.js')['removeTodo']
   const updateTodo: typeof import('./src/api/todo.js')['updateTodo']
+  const useNetworkStatus: typeof import('./src/composables/useNetworkStatus.js')['useNetworkStatus']
 }
