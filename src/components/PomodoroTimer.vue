@@ -38,6 +38,7 @@
 import { ref, computed, onUnmounted } from "vue";
 import { VideoPlay, VideoPause, Refresh } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
+import { updateTodo } from "@/api/todo";
 const props = defineProps({
   task: {
     type: Object,
@@ -47,7 +48,8 @@ const props = defineProps({
 
 const emit = defineEmits(["pomodoro-complete"]);
 
-const POMODORO_TIME = 25 * 60; // 25分钟
+const POMODORO_TIME = 0.1 * 30; // 改成3秒
+// const POMODORO_TIME = 25 * 60; // 25分钟
 const timeLeft = ref(POMODORO_TIME);
 const isRunning = ref(false);
 let timerInterval = null;
@@ -104,21 +106,19 @@ function resetTimer() {
   isRunning.value = false;
 }
 
-const handlePomodoroComplete = async () => {
-  try {
-    const response = await updateTodo({
-      ...props.data,
-      completedPomodoros: (props.data.completedPomodoros || 0) + 1
-    });
-    
-    if (response.data) {
-      emit('update', response.data);
-      ElMessage.success('完成一个番茄钟！');
-    }
-  } catch (error) {
-    ElMessage.error('更新失败');
-  }
-};
+function handlePomodoroComplete() {
+  // 播放提示音
+  const audio = new Audio("/notification.mp3");
+  audio.play();
+
+  // 通知父组件番茄钟完成
+  emit("pomodoro-complete");
+
+  // ElMessage.success({
+  //   message: "恭喜完成一个番茄钟！",
+  //   duration: 3000,
+  // });
+}
 
 // 组件卸载时清理定时器
 onUnmounted(() => {

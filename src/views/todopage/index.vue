@@ -47,6 +47,7 @@
       @update-visible="updateDrawerVisible"
       :data="currentTodoData"
       @delete="handleDeleteTodo"
+      @update="getTodo"
     />
   </div>
 </template>
