@@ -109,7 +109,7 @@ function saveTodo() {
     alert("请输入任务内容！");
     return;
   }
-  emit("update", { ...localTodo.value });
+  emit("add", { ...localTodo.value });
   closeDialog();
 }
 

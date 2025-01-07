@@ -1,145 +1,155 @@
 <template>
-  <div>
-    <!-- 任务输入部分 -->
-    <add-plan @update="saveTodo" />
-
-    <!-- 未完成任务列表 -->
-    <div class="todo_box">
-      <TodoItem
-        v-for="todo in unfinList"
-        :key="todo.id"
-        :todo="todo"
-        @update-status="handleUpdateTodo"
-        @click-title="handleClickTitle"
+  <div class="todo-page">
+    <!-- 现有的待办事项列表 -->
+    <div class="todo-list">
+      <AddTodo @add="handleAddTodo" />
+      <TodoList 
+        :todos="todos" 
+        @update="handleUpdateTodo"
         @delete="handleDeleteTodo"
+        @select-task="selectTaskForPomodoro"
       />
     </div>
 
-    <!-- 完成任务切换 -->
-    <div
-      v-if="completedList?.length"
-      class="show_com_todo"
-      @click="() => (showCompletedTodo = !showCompletedTodo)"
-    >
-      <div v-show="showCompletedTodo" class="show_com_todo_button">
-        隐藏已完成任务 <el-icon><ArrowUp /></el-icon>
-      </div>
-      <div v-show="!showCompletedTodo" class="show_com_todo_button">
-        显示已完成任务 <el-icon><ArrowDown /></el-icon>
-      </div>
-    </div>
-
-    <!-- 已完成任务列表 -->
-    <div v-show="showCompletedTodo && completedList.length" class="todo_box">
-      <TodoItem
-        v-for="todo in completedList"
-        :key="todo.id"
-        :todo="todo"
-        @update-status="handleUpdateTodo"
-        @click-title="handleClickTitle"
-        @delete="handleDeleteTodo"
+    <!-- 悬浮番茄钟 -->
+    <div class="floating-timer" @click="openTimer">
+      <PomodoroTimer 
+        ref="pomodoroTimer"
+        :task="currentTask"
+        @pomodoro-complete="handlePomodoroComplete"
       />
     </div>
 
-    <!-- 任务详情抽屉 -->
-    <TodoDrawer
-      :visible="showDrawer"
-      @update-visible="updateDrawerVisible"
-      :data="currentTodoData"
-      @delete="handleDeleteTodo"
-      @update="getTodo"
-    />
+    <!-- 统计信息 -->
+    <Statistics v-if="showStatistics" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
-import TodoDrawer from "./components/TodoDrawer.vue";
-import TodoItem from "@/components/TodoItem.vue";
-import AddPlan from ".//components/AddPlan.vue";
-import { fetchTodos, createTodo, updateTodo, removeTodo } from "@/api/todo";
+import { ref, onMounted } from 'vue';
+import AddTodo from './components/AddTodo.vue';
+import TodoList from './components/TodoList.vue';
+import PomodoroTimer from '@/components/PomodoroTimer.vue';
+import Statistics from '@/components/Statistics.vue';
+import { fetchTodos, updateTodo, removeTodo } from '@/api/todo';
 
 const todos = ref([]);
-const showCompletedTodo = ref(false);
-const showDrawer = ref(false);
-const currentTodoData = ref({});
-const unfinList = computed(() => todos.value.filter((todo) => !todo.completed));
-const completedList = computed(() =>
-  todos.value.filter((todo) => todo.completed)
-);
+const pomodoroTimer = ref(null);
+const currentTask = ref({
+  title: '专注计时',
+  completed: false,
+  completedPomodoros: 0
+});
+const showStatistics = ref(false);
 
-async function getTodo() {
-  const res = await fetchTodos();
-  todos.value = res.data;
-}
-
-async function saveTodo(newTodo) {
+// 获取所有任务
+const getTodos = async () => {
   try {
-    const res = await createTodo(newTodo);
-    if (!res.success) {
-      throw new Error("保存失败");
+    const response = await fetchTodos();
+    if (response.success) {
+      todos.value = response.data;
     }
-    getTodo();
   } catch (error) {
-    console.error(error);
-    alert("保存任务失败，请稍后重试");
+    ElMessage.error('获取任务列表失败');
   }
-}
+};
 
-async function handleUpdateTodo(todo) {
+// 处理添加任务
+const handleAddTodo = async (todo) => {
   try {
-    todo.completed = !todo.completed;
-    const res = await updateTodo(todo);
-    if (!res.success) {
-      throw new Error("更新任务失败");
+    const response = await createTodo(todo);
+    if (response.success) {
+      await getTodos();
+      ElMessage.success('添加成功');
     }
-    getTodo();
   } catch (error) {
-    alert("更新任务失败，请稍后重试");
+    ElMessage.error('添加失败');
   }
-}
+};
 
-function handleClickTitle(todo) {
-  currentTodoData.value = todo;
-  showDrawer.value = true;
-}
-
-async function handleDeleteTodo(todo) {
+// 处理更新任务
+const handleUpdateTodo = async (todo) => {
   try {
-    const res = await removeTodo(todo.id);
-    if (!res.success) {
-      throw new Error("删除任务失败");
+    const response = await updateTodo(todo);
+    if (response.success) {
+      await getTodos();
     }
-    getTodo();
   } catch (error) {
-    console.error(error);
-    alert("删除任务失败，请稍后重试");
+    ElMessage.error('更新失败');
   }
-}
+};
 
-function updateDrawerVisible(value) {
-  showDrawer.value = value;
-}
+// 处理删除任务
+const handleDeleteTodo = async (todo) => {
+  try {
+    const response = await removeTodo(todo.id);
+    if (response.success) {
+      await getTodos();
+      ElMessage.success('删除成功');
+    }
+  } catch (error) {
+    ElMessage.error('删除失败');
+  }
+};
 
+// 打开番茄钟全屏模式
+const openTimer = () => {
+  pomodoroTimer.value?.toggleFullscreen();
+};
+
+// 处理番茄钟完成
+const handlePomodoroComplete = async () => {
+  if (currentTask.value) {
+    try {
+      const updatedTodo = {
+        ...currentTask.value,
+        completedPomodoros: (currentTask.value.completedPomodoros || 0) + 1
+      };
+      
+      const response = await updateTodo(updatedTodo);
+      if (response.success) {
+        currentTask.value = response.data;
+        ElMessage.success('完成一个番茄钟！');
+      }
+    } catch (error) {
+      ElMessage.error('更新失败');
+    }
+  }
+};
+
+// 选择当前任务进行番茄钟计时
+const selectTaskForPomodoro = (todo) => {
+  currentTask.value = todo;
+  openTimer();
+};
+
+// 页面加载时获取任务列表
 onMounted(() => {
-  getTodo();
+  getTodos();
 });
 </script>
 
-<style scoped>
-.todo_box {
-  margin-top: 12px;
-}
-.show_com_todo {
-  margin-top: 10px;
+<style lang="scss" scoped>
+.todo-page {
   display: flex;
-  justify-content: center;
-}
-.show_com_todo_button {
-  padding: 5px 12px;
-  border-radius: 8px;
-  background: #f5f5f5;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  padding: 20px;
+
+  .todo-list {
+    flex: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .floating-timer {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+  }
 }
 </style>

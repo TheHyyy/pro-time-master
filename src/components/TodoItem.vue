@@ -16,15 +16,25 @@
         {{ todo.title }}
       </div>
 
-      <el-icon class="todo_item_delete" :style="{ color: '#3f8ef7' }" @click="handleDeleteClick">
-        <Close />
-      </el-icon>
+      <div class="todo_item_actions">
+        <el-button
+          v-if="!todo.completed"
+          type="primary"
+          size="small"
+          circle
+          :icon="Timer"
+          @click="$emit('start-pomodoro')"
+        />
+        <el-icon class="todo_item_delete" @click="handleDeleteClick">
+          <Close />
+        </el-icon>
+      </div>
     </div>
   </div>
 </template>
 <script setup>
 import { defineProps, defineEmits } from "vue";
-import { Close } from "@element-plus/icons-vue";
+import { Close, Timer } from "@element-plus/icons-vue";
 
 const props = defineProps({
   todo: {
@@ -33,7 +43,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update-status", "click-title", "delete"]);
+const emit = defineEmits(["update-status", "click-title", "delete", "start-pomodoro"]);
 
 const handleCheckboxClick = () => {
   // 当复选框点击时，通知父组件更新 todos
@@ -62,6 +72,12 @@ const handleDeleteClick = () => {
   overflow: hidden;
   border: 1px solid #eee;
   padding: 10px;
+
+  .todo_item_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
 }
 .todo_item_content {
   display: flex;
