@@ -1,16 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { authGuard } from './guards';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
-// import TodoPage from '@/views/todopage/index.vue';
-// import HomePage from '@/views/HomePage.vue';
+import Login from '@/views/auth/Login.vue';
+import Register from '@/views/auth/Register.vue';
 
 const routes = [
   {
+    path: '/login',
+    component: Login,
+  },
+  {
+    path: '/register',
+    component: Register,
+  },
+  {
     path: '/',
     component: DefaultLayout,
-    // children: [
-    //   { path: '', component: HomePage }, // 首页
-    //   { path: 'todos', component: TodoPage }, // 待办事项页面
-    // ],
+    children: [
+      { path: '', component: () => import('@/views/todopage/index.vue') },
+    ],
   },
 ];
 
@@ -18,5 +26,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes,
 });
+
+router.beforeEach(authGuard);
 
 export default router;

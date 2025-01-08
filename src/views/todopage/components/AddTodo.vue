@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="add-todo">
     <el-input
       v-model="localTodo.title"
       placeholder="在'任务'中添加一个任务，按'回车'键保存"
@@ -8,51 +8,47 @@
       <template #prepend>
         <el-select
           v-model="localTodo.priority"
-          placeholder="选择优先级"
-          size="large"
-          style="width: 80px"
+          placeholder="优先级"
+          style="width: 110px"
         >
           <el-option
             v-for="item in priorityOptions"
             :key="item.value"
-            :label="item.label"
+            :label="item.label1 + item.label2"
             :value="item.value"
           >
-            <div class="select_option">
-              <div class="select_option_label1">{{ item.label1 }}</div>
-              <div class="select_option_label2">{{ item.label2 }}</div>
-              <div class="select_option_icon">
-                <el-icon :style="{ color: item.color || '#3f8ef7' }">
-                  <MessageBox />
-                </el-icon>
-              </div>
+            <div class="priority-option">
+              <el-tag :color="item.color" size="small">
+                {{ item.label1 }}{{ item.label2 }}
+              </el-tag>
             </div>
           </el-option>
         </el-select>
       </template>
+      
       <template #append>
         <el-popover
-          placement="top-start"
-          :width="200"
+          placement="top"
           trigger="hover"
-          content="预计番茄钟"
+          content="预计番茄钟数量"
         >
           <template #reference>
-            <el-rate
-              v-model="localTodo.estimatedPomodoro"
-              :icons="icons"
-              :void-icon="Clock"
-              :colors="['#409eff', '#67c23a', '#FF9900']"
-              clearable
+            <el-input-number 
+              v-model="localTodo.estimatedPomodoros"
+              :min="1"
+              :max="10"
+              size="small"
+              style="width: 100px"
             />
           </template>
         </el-popover>
+        
         <el-date-picker
           v-model="localTodo.dueDate"
           type="date"
-          placeholder="选择日期"
+          placeholder="截止日期"
           size="small"
-          format="YYYY-MM-DD"
+          :shortcuts="dateShortcuts"
         />
       </template>
     </el-input>
@@ -60,78 +56,70 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect } from "vue";
-import { Clock } from "@element-plus/icons-vue";
-import { priorityOptions } from "@/data/todoOptions";
+import { ref } from 'vue';
+import { priorityOptions } from '@/data/todoOptions';
 
-const props = defineProps({
-  todo: Object,
-  visible: Boolean,
-});
+const emit = defineEmits(['add']);
 
-const emit = defineEmits(["update", "close"]);
+const dateShortcuts = [
+  {
+    text: '今天',
+    value: new Date(),
+  },
+  {
+    text: '明天',
+    value: () => {
+      const date = new Date();
+      date.setTime(date.getTime() + 3600 * 1000 * 24);
+      return date;
+    },
+  },
+  {
+    text: '一周后',
+    value: () => {
+      const date = new Date();
+      date.setTime(date.getTime() + 3600 * 1000 * 24 * 7);
+      return date;
+    },
+  },
+];
 
-const icons = [Clock, Clock, Clock, Clock, Clock];
 const localTodo = ref({
-  id: null,
-  title: "",
-  priority: 4, // 对应后端 importance 的默认值
-  estimatedPomodoro: 0, // 预计番茄钟
-  dueDate: null, // 选择日期
-  completed: false, // 是否完成，默认 false
+  title: '',
+  priority: 4,
+  estimatedPomodoros: 1,
+  dueDate: null,
+  completed: false,
+  completedPomodoros: 0,
 });
 
-
-const isEditing = computed(() => !!props.todo);
-
-watchEffect(() => {
-  if (isEditing.value) {
-    localTodo.value = { ...props.todo };
-  } else {
-    resetTodo();
-  }
-});
-
-function resetTodo() {
-  localTodo.value = {
-    id: null,
-    title: "",
-    priority: 4, // 默认优先级 '不紧急不重要'
-    estimatedPomodoro: 0,
-    dueDate: null,
-    completed: false,
-  };
-}
-
-function saveTodo() {
-  const title = localTodo.value.title.trim();
-  if (!title) {
-    alert("请输入任务内容！");
+const saveTodo = () => {
+  if (!localTodo.value.title.trim()) {
+    ElMessage.warning('请输入任务标题');
     return;
   }
-  emit("add", { ...localTodo.value });
-  closeDialog();
-}
 
-function closeDialog() {
-  emit("close");
-}
+  emit('add', { ...localTodo.value });
+  
+  // 重置表单
+  localTodo.value = {
+    title: '',
+    priority: 4,
+    estimatedPomodoros: 1,
+    dueDate: null,
+    completed: false,
+    completedPomodoros: 0,
+  };
+};
 </script>
 
-<style scoped>
-.select_option {
-  display: flex;
-}
-.select_option_label1 {
-  width: 80px;
-}
-.select_option_label2 {
-  width: 80px;
-}
-.select_option_icon {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
+<style lang="scss" scoped>
+.add-todo {
+  margin-bottom: 20px;
+  
+  .priority-option {
+    display: flex;
+    align-items: center;
+  }
 }
 </style>

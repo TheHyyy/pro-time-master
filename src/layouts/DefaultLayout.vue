@@ -1,75 +1,79 @@
 <template>
   <div class="layout-container">
-    <!-- 头部 -->
-    <header class="layout-header">
-      <el-header>
-        <h1>My Todo App</h1>
-      </el-header>
+    <header class="header">
+      <div class="logo">Pro Time Master</div>
+      <div class="user-info">
+        <template v-if="isLoggedIn">
+          <span>{{ username }}</span>
+          <el-button type="text" @click="handleLogout">退出</el-button>
+        </template>
+        <template v-else>
+          <el-button type="text" @click="$router.push('/login')">登录</el-button>
+          <el-button type="text" @click="$router.push('/register')">注册</el-button>
+        </template>
+      </div>
     </header>
-
-    <div class="layout_content">
-      <!-- 侧边栏 -->
-      <aside class="layout-sidebar">
-        <el-menu default-active="1" class="menu" :router="true">
-          <el-menu-item index="/">首页</el-menu-item>
-          <el-menu-item index="/">待办事项</el-menu-item>
-        </el-menu>
-      </aside>
-
-      <!-- 主体部分 -->
-      <main class="layout-main">
-        <!-- <router-view /> -->
-        <!-- 主体部分通过路由展示 -->
-        <TODO />
-      </main>
-    </div>
+    
+    <main class="main-content">
+      <router-view />
+    </main>
   </div>
 </template>
 
 <script setup>
-import TODO from "@/views/todopage/index.vue";
-// 此处你可以根据需求进行一些布局上的配置，如主题切换、菜单折叠等
+import { computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { logout } from '@/api/auth';
+
+const router = useRouter();
+
+const isLoggedIn = computed(() => !!localStorage.getItem('token'));
+const username = computed(() => {
+  const user = localStorage.getItem('user');
+  return user ? JSON.parse(user).username : '';
+});
+
+const handleLogout = () => {
+  logout();
+  router.push('/login');
+};
 </script>
 
 <style lang="scss" scoped>
 .layout-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-}
+  min-height: 100vh;
+  background-color: #f5f5f5;
 
-.layout-header {
-  background-color: #409eff;
-  color: #fff;
-  padding: 20px;
-  /* 让header独占一行，保持垂直布局 */
-  order: 0;
-}
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 60px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
-.layout_content {
-  display: flex;
-  .layout-sidebar {
-    width: 200px;
-    background-color: #f4f4f5;
-    /* 让aside排在第二位，在header之后 */
-    order: 1;
+    .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #409eff;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
   }
 
-  .layout-main {
+  .main-content {
     flex: 1;
     padding: 20px;
-    /* 让main排在第三位，在aside之后 */
-    order: 2;
-  }
-
-  .layout-sidebar {
-    width: 200px;
-    order: 0;
-  }
-
-  .layout-main {
-    flex: 1;
-    order: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 </style>
