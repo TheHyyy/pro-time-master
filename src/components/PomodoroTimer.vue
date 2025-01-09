@@ -1,76 +1,51 @@
 <template>
-  <div :class="['pomodoro-timer', { 'fullscreen': isFullscreen }]">
-    <div class="timer-display">
-      <div class="time">{{ formatTime(timeLeft) }}</div>
-      <div class="status">{{ currentStatus }}</div>
-      <div class="task-info" v-if="task">
-        <el-tag>当前任务: {{ task.title }}</el-tag>
+  <div 
+    class="pomodoro-timer" 
+    :class="{ 'fullscreen': isFullscreen }"
+  >
+    <div class="timer-content">
+      <!-- 顶部任务名称 -->
+      <div class="task-name">
+        {{ task?.title || '请选择一个任务...' }}
       </div>
-      <div class="progress">
-        <el-progress
-          :percentage="progressPercentage"
-          :stroke-width="8"
-          :color="progressColor"
-          :show-text="false"
-        />
+
+      <!-- 计时器圆环 -->
+      <div class="timer-circle">
+        <div class="time-display">{{ formatTime(timeLeft) }}</div>
+        <div class="timer-controls">
+          <el-button 
+            type="primary" 
+            round 
+            size="large"
+            @click="toggleTimer"
+          >
+            {{ isRunning ? '暂停' : '开始专注' }}
+          </el-button>
+        </div>
+      </div>
+
+      <!-- 底部控制栏 -->
+      <div class="bottom-controls">
+        <div class="control-item" @click="toggleFullscreen">
+          <el-icon><FullScreen /></el-icon>
+          <span>全屏</span>
+        </div>
+        <div class="control-item">
+          <el-icon><Timer /></el-icon>
+          <span>计时模式</span>
+        </div>
+        <div class="control-item">
+          <el-icon><Notification /></el-icon>
+          <span>白噪音</span>
+        </div>
       </div>
     </div>
-
-    <div class="timer-controls">
-      <el-button
-        type="primary"
-        :icon="isRunning ? VideoPause : VideoPlay"
-        @click="toggleTimer"
-        :disabled="task?.completed"
-        circle
-      />
-
-      <el-button
-        type="danger"
-        :icon="Refresh"
-        @click="resetTimer"
-        :disabled="isRunning || task?.completed"
-        circle
-      />
-
-      <el-button
-        type="success"
-        :icon="isFullscreen ? Minus : FullScreen"
-        @click="toggleFullscreen"
-        circle
-      />
-    </div>
-
-    <el-drawer
-      v-model="showSettings"
-      title="番茄钟设置"
-      direction="rtl"
-      size="300px"
-    >
-      <el-form :model="settings" label-width="120px">
-        <el-form-item label="工作时长(分钟)">
-          <el-input-number v-model="settings.workTime" :min="1" :max="60" />
-        </el-form-item>
-        <el-form-item label="短休息时长(分钟)">
-          <el-input-number v-model="settings.shortBreakTime" :min="1" :max="30" />
-        </el-form-item>
-        <el-form-item label="长休息时长(分钟)">
-          <el-input-number v-model="settings.longBreakTime" :min="1" :max="60" />
-        </el-form-item>
-        <el-form-item label="长休息间隔">
-          <el-input-number v-model="settings.longBreakInterval" :min="1" :max="10" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="saveSettings">保存设置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-drawer>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { VideoPlay, VideoPause, Refresh, FullScreen, Minus, Setting } from "@element-plus/icons-vue";
+import { Timer, Notification, FullScreen } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { pomodoroStorage } from '@/utils/pomodoroStorage';
 import { updateTodoPomodoros } from '@/api/todo';
@@ -90,18 +65,7 @@ const isRunning = ref(false);
 const timeLeft = ref(25 * 60); // 默认25分钟
 const currentMode = ref('work'); // work, shortBreak, longBreak
 const completedPomodoros = ref(0);
-const showSettings = ref(false);
-
-// 设置
 const settings = ref(pomodoroStorage.getSettings());
-
-// 保存设置
-const saveSettings = () => {
-  pomodoroStorage.saveSettings(settings.value);
-  showSettings.value = false;
-  ElMessage.success('设置已保存');
-  resetTimer();
-};
 
 // 保存当前会话状态
 const saveCurrentSession = () => {
@@ -124,50 +88,8 @@ const restoreLastSession = () => {
     timeLeft.value = session.timeLeft;
     currentMode.value = session.currentMode;
     completedPomodoros.value = session.completedPomodoros;
-    // 可以选择是否自动继续计时
-    // isRunning.value = true;
   }
 };
-
-// 在组件挂载时恢复会话
-onMounted(() => {
-  restoreLastSession();
-});
-
-// 定期保存会话状态
-let saveInterval;
-onMounted(() => {
-  saveInterval = setInterval(saveCurrentSession, 1000);
-});
-
-onUnmounted(() => {
-  clearInterval(saveInterval);
-  saveCurrentSession();
-});
-
-// 计算属性
-const currentStatus = computed(() => {
-  if (!props.task) return "准备开始";
-  if (props.task.completed) return "任务已完成";
-  if (timeLeft.value === 0) return "时间到！";
-  return isRunning.value ? 
-    currentMode.value === 'work' ? "专注中..." : "休息中..." 
-    : "准备开始";
-});
-
-const progressPercentage = computed(() => {
-  const totalTime = currentMode.value === 'work' 
-    ? settings.value.workTime * 60
-    : currentMode.value === 'shortBreak' 
-      ? settings.value.shortBreakTime * 60
-      : settings.value.longBreakTime * 60;
-  return ((totalTime - timeLeft.value) / totalTime) * 100;
-});
-
-const progressColor = computed(() => {
-  if (timeLeft.value === 0) return "#67C23A";
-  return currentMode.value === 'work' ? "#409EFF" : "#67C23A";
-});
 
 // 计时器逻辑
 let timerInterval = null;
@@ -175,9 +97,7 @@ let timerInterval = null;
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(
-    remainingSeconds
-  ).padStart(2, "0")}`;
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
 }
 
 function toggleTimer() {
@@ -211,14 +131,12 @@ function resetTimer() {
 }
 
 async function handlePomodoroComplete() {
-  // 播放提示音
   const audio = new Audio("/notification.mp3");
   audio.play();
 
   if (currentMode.value === 'work') {
     completedPomodoros.value++;
     
-    // 更新任务的番茄钟完成数
     if (props.task) {
       try {
         await updateTodoPomodoros(props.task.id);
@@ -228,7 +146,6 @@ async function handlePomodoroComplete() {
       }
     }
 
-    // 判断是否需要长休息
     if (completedPomodoros.value % settings.value.longBreakInterval === 0) {
       currentMode.value = 'longBreak';
       timeLeft.value = settings.value.longBreakTime * 60;
@@ -237,12 +154,10 @@ async function handlePomodoroComplete() {
       timeLeft.value = settings.value.shortBreakTime * 60;
     }
   } else {
-    // 休息结束，开始新的工作时段
     currentMode.value = 'work';
     timeLeft.value = settings.value.workTime * 60;
   }
 
-  // 自动开始下一个时段
   if ((currentMode.value === 'work' && settings.value.autoStartPomodoros) ||
       (currentMode.value !== 'work' && settings.value.autoStartBreaks)) {
     toggleTimer();
@@ -260,12 +175,18 @@ function toggleFullscreen() {
   isFullscreen.value = !isFullscreen.value;
 }
 
-// 组件卸载时清理定时器
-onUnmounted(() => {
-  clearInterval(timerInterval);
+// 生命周期钩子
+onMounted(() => {
+  restoreLastSession();
+  const saveInterval = setInterval(saveCurrentSession, 1000);
+  return () => clearInterval(saveInterval);
 });
 
-// 监听任务变化
+onUnmounted(() => {
+  clearInterval(timerInterval);
+  saveCurrentSession();
+});
+
 watch(() => props.task, (newTask) => {
   if (newTask) {
     resetTimer();
@@ -275,73 +196,105 @@ watch(() => props.task, (newTask) => {
 
 <style lang="scss" scoped>
 .pomodoro-timer {
-  text-align: center;
-  padding: 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
   transition: all 0.3s ease;
 
   &.fullscreen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 9999;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .timer-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #fff;
+  }
+
+  .task-name {
+    font-size: 18px;
+    margin-bottom: 40px;
+    opacity: 0.8;
+  }
+
+  .timer-circle {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
-    .time {
-      font-size: 120px !important;
-      color: #fff !important;
-    }
-
-    .status {
-      font-size: 24px !important;
-      color: #fff !important;
-    }
-
-    .progress {
-      width: 400px;
-      margin: 40px auto;
-    }
-  }
-
-  .timer-display {
     margin-bottom: 40px;
 
-    .time {
-      font-size: 48px;
-      font-weight: bold;
-      color: #409eff;
+    &::before {
+      content: '';
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      pointer-events: none;
     }
 
-    .status {
-      font-size: 16px;
-      color: #666;
-      margin: 16px 0;
+    .time-display {
+      font-size: 96px;
+      font-weight: 200;
+      margin-bottom: 20px;
     }
 
-    .task-info {
-      margin: 16px 0;
-    }
-
-    .progress {
-      margin-top: 16px;
-      width: 200px;
-      margin: 0 auto;
+    .timer-controls {
+      :deep(.el-button) {
+        padding: 12px 36px;
+        font-size: 16px;
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.2);
+        
+        &:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
     }
   }
 
-  .timer-controls {
+  .bottom-controls {
     display: flex;
-    justify-content: center;
-    gap: 24px;
+    gap: 60px;
+    margin-top: 40px;
 
-    .el-button {
-      width: 48px;
-      height: 48px;
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      opacity: 0.6;
+      transition: opacity 0.3s;
+
+      &:hover {
+        opacity: 1;
+      }
+
+      .el-icon {
+        font-size: 24px;
+      }
+
+      span {
+        font-size: 12px;
+      }
     }
   }
 }
