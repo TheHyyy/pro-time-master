@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="240px" class="layout-aside">
-      <div class="logo">Pro Time Master</div>
+    <el-aside width="200px" class="layout-aside">
+      <div class="logo">专注清单</div>
       <el-menu
         :default-active="activeMenu"
         class="menu"
@@ -9,12 +9,12 @@
       >
         <el-menu-item index="all">
           <el-icon><List /></el-icon>
-          <span>全部任务</span>
+          <span>所有任务</span>
         </el-menu-item>
 
         <el-menu-item index="urgent-important">
           <el-icon><Warning /></el-icon>
-          <span>紧急且重要</span>
+          <span>重要紧急</span>
         </el-menu-item>
 
         <el-menu-item index="completed">
@@ -24,31 +24,23 @@
 
         <el-menu-item index="statistics">
           <el-icon><DataLine /></el-icon>
-          <span>图表统计</span>
+          <span>数据统计</span>
         </el-menu-item>
       </el-menu>
+      
       <div class="menu-footer">
         <el-button 
-          type="text" 
+          text
           @click="showSettings = true"
           class="settings-btn"
         >
           <el-icon><Setting /></el-icon>
-          设置
+          <span>设置</span>
         </el-button>
       </div>
     </el-aside>
 
-    <el-container>
-      <el-header class="layout-header">
-        <div class="header-left">
-          <el-breadcrumb>
-            <el-breadcrumb-item>首页</el-breadcrumb-item>
-            <el-breadcrumb-item>{{ currentPage }}</el-breadcrumb-item>
-          </el-breadcrumb>
-        </div>
-      </el-header>
-
+    <el-container class="main-container">
       <el-main class="layout-main">
         <router-view></router-view>
       </el-main>
@@ -57,7 +49,8 @@
     <el-dialog
       title="设置"
       v-model="showSettings"
-      width="500px"
+      width="460px"
+      class="settings-dialog"
     >
       <el-form :model="settings" label-width="120px">
         <h4>番茄钟设置</h4>
@@ -138,72 +131,107 @@ const playSound = () => {
 <style lang="scss" scoped>
 .layout-container {
   height: 100vh;
+  background-color: #f5f7fa;
 
   .layout-aside {
-    background-color: #304156;
-    color: #fff;
+    background-color: #fff;
+    border-right: 1px solid #e6e6e6;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s;
+    overflow: hidden;
 
     .logo {
-      height: 60px;
-      line-height: 60px;
+      height: 64px;
+      line-height: 64px;
       text-align: center;
-      font-size: 20px;
-      font-weight: bold;
-      border-bottom: 1px solid #1f2d3d;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 1px solid #f0f0f0;
     }
 
     .menu {
       border-right: none;
-      background-color: transparent;
+      flex: 1;
+
+      :deep(.el-menu-item) {
+        height: 50px;
+        line-height: 50px;
+        margin: 4px 0;
+        padding: 0 20px;
+        border-radius: 0 24px 24px 0;
+        margin-right: 12px;
+
+        &.is-active {
+          background-color: #f0f7ff;
+          color: var(--el-color-primary);
+        }
+
+        .el-icon {
+          margin-right: 12px;
+          font-size: 18px;
+        }
+      }
     }
-  }
 
-  .layout-header {
-    background-color: #fff;
-    border-bottom: 1px solid #dcdfe6;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
+    .menu-footer {
+      padding: 16px;
+      border-top: 1px solid #f0f0f0;
 
-    .user-info {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-  }
+      .settings-btn {
+        width: 100%;
+        justify-content: flex-start;
+        padding: 8px 12px;
+        color: #666;
+        
+        .el-icon {
+          margin-right: 8px;
+          font-size: 16px;
+        }
 
-  .layout-main {
-    background-color: #f0f2f5;
-    padding: 20px;
-  }
-
-  .menu-footer {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    padding: 0 20px;
-    
-    .settings-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #fff;
-      
-      &:hover {
-        opacity: 0.8;
+        &:hover {
+          color: var(--el-color-primary);
+          background-color: #f0f7ff;
+        }
       }
     }
   }
+
+  .main-container {
+    background-color: #f5f7fa;
+  }
+
+  .layout-main {
+    padding: 24px;
+    height: 100%;
+    overflow-y: auto;
+  }
 }
 
-:deep(.el-dialog__body) {
-  h4 {
-    margin: 16px 0;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #eee;
-    color: #606266;
+:deep(.settings-dialog) {
+  .el-dialog__header {
+    margin: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .el-dialog__body {
+    padding: 24px;
+
+    h4 {
+      margin: 16px 0;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #333;
+      font-size: 15px;
+      font-weight: 500;
+    }
+  }
+
+  .el-dialog__footer {
+    padding: 16px 24px;
+    border-top: 1px solid #f0f0f0;
   }
 }
 </style>
