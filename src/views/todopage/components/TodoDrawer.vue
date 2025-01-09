@@ -1,141 +1,128 @@
 <template>
-  <div>
-    <el-drawer
-      :width="340"
-      :model-value="visible"
-      @open="handleOpen"
-      @close="handleClose"
-      unmountOnClose
-    >
-      <template #header>
-        <h3>任务详情</h3>
-      </template>
-      
-      <div class="drawer-content">
-        <div class="detail-item">
-          <span class="label">任务名称：</span>
-          <span>{{ data.title }}</span>
-        </div>
-        
-        <div class="detail-item">
-          <span class="label">优先级：</span>
-          <span :style="{ color: getPriorityColor(data.priority) }">
-            {{ getPriorityLabel(data.priority) }}
-          </span>
-        </div>
-        
-        <div class="detail-item">
-          <span class="label">预计番茄数：</span>
-          <span>{{ data.estimatedPomodoro }} 个</span>
-        </div>
-        
-        <div class="detail-item">
-          <span class="label">已完成番茄数：</span>
-          <span>{{ data.completedPomodoros || 0 }} 个</span>
-        </div>
-        
-        <div class="detail-item">
-          <span class="label">截止日期：</span>
-          <span>{{ formatDate(data.dueDate) }}</span>
-        </div>
-        
-        <div class="detail-item">
-          <span class="label">完成状态：</span>
-          <span>{{ data.completed ? '已完成' : '未完成' }}</span>
-        </div>
+  <el-drawer
+    :title="data ? '编辑任务' : '任务详情'"
+    :model-value="visible"
+    @update:model-value="$emit('update:visible')"
+    :size="400"
+    @close="handleClose"
+  >
+    <template #default>
+      <el-form :model="todoForm" label-width="100px">
+        <el-form-item label="任务名称">
+          <el-input v-model="todoForm.title" />
+        </el-form-item>
 
-        <div class="pomodoro-section">
-          <h4>番茄钟计时</h4>
-          <PomodoroTimer 
-            :task="data"
-            @pomodoro-complete="handlePomodoroComplete"
+        <el-form-item label="任务描述">
+          <el-input
+            v-model="todoForm.description"
+            type="textarea"
+            rows="4"
           />
-        </div>
-      </div>
+        </el-form-item>
 
-      <template #footer>
-        <div class="drawer-footer">
-          <el-button @click="handleClose">关闭</el-button>
-          <el-button @click="handleDelete" type="danger" plain>删除</el-button>
-        </div>
-      </template>
-    </el-drawer>
-  </div>
+        <el-form-item label="重要程度">
+          <el-radio-group v-model="todoForm.quadrant">
+            <el-radio-button 
+              v-for="option in priorityOptions" 
+              :key="option.value" 
+              :label="option.value"
+            >
+              {{ option.label1 }} {{ option.label2 }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="完成状态">
+          <el-switch
+            v-model="todoForm.completed"
+            active-text="已完成"
+            inactive-text="未完成"
+          />
+        </el-form-item>
+
+        <el-form-item label="番茄钟数">
+          <el-tag type="success">已完成 {{ todoForm.pomodoroCount }} 个</el-tag>
+        </el-form-item>
+
+        <el-form-item label="创建时间">
+          <span>{{ formatDate(todoForm.createdAt) }}</span>
+        </el-form-item>
+
+        <el-form-item label="更新时间">
+          <span>{{ formatDate(todoForm.updatedAt) }}</span>
+        </el-form-item>
+      </el-form>
+    </template>
+
+    <template #footer>
+      <div class="drawer-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" @click="handleSave">保存</el-button>
+        <el-button type="danger" @click="handleDelete">删除</el-button>
+      </div>
+    </template>
+  </el-drawer>
 </template>
 
 <script setup>
-import { URGENT_COLOR_MAP, URGENT_LABEL_MAP } from '@/constant/todo';
-import { formatDate } from '@/utils/date';
-import PomodoroTimer from '@/components/PomodoroTimer.vue';
+import { ref, watch } from 'vue';
+import { priorityOptions } from '@/data/todoOptions';
 import { updateTodo } from '@/api/todo';
+import { ElMessage } from 'element-plus';
 
 const props = defineProps({
   visible: Boolean,
-  data: Object,
+  data: Object
 });
 
-const emit = defineEmits(["update-visible", "delete", "update"]);
+const emit = defineEmits(['update:visible', 'update', 'delete']);
 
-const getPriorityColor = (priority) => URGENT_COLOR_MAP[priority] || '#409EFF';
-const getPriorityLabel = (priority) => URGENT_LABEL_MAP[priority] || '未设置';
+const todoForm = ref({
+  title: '',
+  description: '',
+  quadrant: '4',
+  completed: false,
+  pomodoroCount: 0,
+  createdAt: '',
+  updatedAt: ''
+});
 
-const handlePomodoroComplete = async () => {
+watch(() => props.data, (newVal) => {
+  if (newVal) {
+    todoForm.value = { ...newVal };
+  }
+}, { immediate: true });
+
+const handleClose = () => {
+  emit('update:visible', false);
+};
+
+const handleSave = async () => {
   try {
-    const updatedTodo = {
-      ...props.data,
-      completedPomodoros: (props.data.completedPomodoros || 0) + 1
-    };
-    
-    const response = await updateTodo(updatedTodo);
-    if (response.success) {
-      emit('update', response.data);
-      ElMessage.success('完成一个番茄钟！');
-    }
+    await updateTodo(todoForm.value);
+    emit('update', todoForm.value);
+    ElMessage.success('保存成功');
+    handleClose();
   } catch (error) {
-    ElMessage.error('更新失败');
+    ElMessage.error('保存失败');
   }
 };
 
-const handleOpen = () => {
-  // 可以在这里加载额外数据
-};
-
-const handleClose = () => {
-  emit("update-visible", false);
-};
-
 const handleDelete = () => {
-  emit("delete", props.data);
-  handleClose();
+  emit('delete', todoForm.value.id);
+};
+
+const formatDate = (date) => {
+  if (!date) return '';
+  return new Date(date).toLocaleString();
 };
 </script>
 
 <style lang="scss" scoped>
-.drawer-content {
-  padding: 20px;
-}
-
-.detail-item {
-  margin-bottom: 16px;
-  
-  .label {
-    color: #666;
-    margin-right: 8px;
-  }
-}
-
-.pomodoro-section {
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #eee;
-  
-  h4 {
-    margin-bottom: 16px;
-    color: #333;
-  }
-}
-
 .drawer-footer {
-  text-align: right;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
 }
 </style>

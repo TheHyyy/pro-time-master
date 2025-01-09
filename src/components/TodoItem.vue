@@ -1,19 +1,21 @@
 <template>
-  <div class="todo_item">
-    <!-- 使用 v-model 双向绑定 todo.completed -->
+  <div class="todo_item" :class="quadrantClass">
     <div class="todo_item_aside">
       <el-checkbox v-model="todo.completed" @click="handleCheckboxClick" />
     </div>
 
     <div class="todo_item_content">
-      <div
-        :class="[
-          'todo_item_title',
-          { todo_item_title_completed: todo.completed },
-        ]"
-        @click="handleTitleClick"
-      >
-        {{ todo.title }}
+      <div class="todo_item_header">
+        <div
+          :class="[
+            'todo_item_title',
+            { todo_item_title_completed: todo.completed },
+          ]"
+          @click="handleTitleClick"
+        >
+          {{ todo.title }}
+        </div>
+        <el-tag :type="quadrantTagType">{{ quadrantLabel }}</el-tag>
       </div>
 
       <div class="todo_item_actions">
@@ -32,9 +34,18 @@
     </div>
   </div>
 </template>
+
 <script setup>
-import { defineProps, defineEmits } from "vue";
+import { computed } from 'vue';
 import { Close, Timer } from "@element-plus/icons-vue";
+import { 
+  URGENT_IMPORTANT, 
+  URGENT_NOT_IMPORTANT,
+  NOT_URGENT_IMPORTANT,
+  NOT_URGENT_NOT_IMPORTANT,
+  URGENT_LABEL_MAP,
+  URGENT_COLOR_MAP 
+} from '@/constant/todo';
 
 const props = defineProps({
   todo: {
@@ -44,6 +55,19 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update-status", "click-title", "delete", "start-pomodoro"]);
+
+const quadrantLabel = computed(() => URGENT_LABEL_MAP[props.todo.quadrant]);
+const quadrantTagType = computed(() => {
+  switch(props.todo.quadrant) {
+    case URGENT_IMPORTANT: return 'danger';
+    case URGENT_NOT_IMPORTANT: return 'warning';
+    case NOT_URGENT_IMPORTANT: return 'success';
+    case NOT_URGENT_NOT_IMPORTANT: return 'info';
+    default: return 'info';
+  }
+});
+
+const quadrantClass = computed(() => `quadrant-${props.todo.quadrant}`);
 
 const handleCheckboxClick = () => {
   // 当复选框点击时，通知父组件更新 todos
@@ -61,6 +85,7 @@ const handleDeleteClick = () => {
   emit("delete", props.todo); // 向父组件发送删除事件
 };
 </script>
+
 <style lang="scss" scoped>
 .todo_item {
   display: flex;
@@ -73,7 +98,26 @@ const handleDeleteClick = () => {
   border: 1px solid #eee;
   padding: 10px;
 
+  &.quadrant-1 {
+    border-left: 4px solid var(--el-color-danger);
+  }
+  &.quadrant-2 {
+    border-left: 4px solid var(--el-color-warning);
+  }
+  &.quadrant-3 {
+    border-left: 4px solid var(--el-color-success);
+  }
+  &.quadrant-4 {
+    border-left: 4px solid var(--el-color-info);
+  }
+
   .todo_item_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .todo_item_header {
     display: flex;
     align-items: center;
     gap: 8px;

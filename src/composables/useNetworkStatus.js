@@ -1,15 +1,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
-import { offlineStorage } from '@/utils/offlineStorage';
 
 export function useNetworkStatus() {
   const isOnline = ref(navigator.onLine);
 
-  const updateOnlineStatus = async () => {
+  const updateOnlineStatus = () => {
     isOnline.value = navigator.onLine;
-    if (isOnline.value) {
-      // 网络恢复时同步离线数据
-      await offlineStorage.syncWithServer();
-    }
   };
 
   onMounted(() => {

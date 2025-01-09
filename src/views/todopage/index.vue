@@ -69,8 +69,10 @@ const handleAddTodo = async (todo) => {
 
 // 处理更新任务
 const handleUpdateTodo = async (todo) => {
+  console.log("🚀 ~ handleUpdateTodo ~ todo:", todo)
   try {
     const response = await updateTodo(todo);
+    console.log("🚀 ~ handleUpdateTodo ~ response:", response)
     if (response.success) {
       await getTodos();
     }

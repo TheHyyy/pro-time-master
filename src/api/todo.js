@@ -9,12 +9,32 @@ export const fetchTodos = () => {
 
 // 写入todo
 export const createTodo = (todo) => {
-  return http.post('/todos', todo);
+  const todoData = {
+    title: todo.title,
+    description: todo.description || '',
+    quadrant: todo.quadrant || '4'
+  };
+  
+  return http.post('/todos', todoData);
 };
 
 // 更新todo
 export const updateTodo = (todo) => {
-  return http.patch(`/todos/${todo.id}`, todo);
+  const todoData = {
+    title: todo.title,
+    description: todo.description,
+    completed: todo.completed,
+    quadrant: todo.quadrant
+  };
+
+  // 移除所有 undefined 的属性
+  Object.keys(todoData).forEach(key => {
+    if (todoData[key] === undefined) {
+      delete todoData[key];
+    }
+  });
+
+  return http.patch(`/todos/${todo.id}`, todoData);
 };
 
 // 删除todo
