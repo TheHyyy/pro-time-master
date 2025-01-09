@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus"; // 假设使用 Element Plus 消息提示组件
+import { useUserStore } from '@/stores/user';
 
 // 动态加载 Router，避免在模块初始化时直接调用 useRouter
 let router = null;
@@ -14,7 +15,7 @@ const getRouter = () => {
 // 创建 Axios 实例
 export const http = axios.create({
   baseURL: "/api",
-  timeout: 10000, // 设置超时时间
+  timeout: 5000, // 设置超时时间
 });
 
 // 公共错误处理函数
@@ -63,15 +64,13 @@ const handleErrorResponse = (error) => {
 // 请求拦截器
 http.interceptors.request.use(
   (config) => {
-    // 示例：从本地存储中获取 Token 并添加到请求头
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    const userStore = useUserStore();
+    if (userStore.token) {
+      config.headers.Authorization = `Bearer ${userStore.token}`;
     }
     return config;
   },
   (error) => {
-    ElMessage.error("请求发送失败");
     return Promise.reject(error);
   }
 );
@@ -79,8 +78,14 @@ http.interceptors.request.use(
 // 响应拦截器
 http.interceptors.response.use(
   (response) => {
-    // 直接返回响应数据
-    return response.data || response;
+    return response.data;
   },
-  (error) => handleErrorResponse(error)
+  (error) => {
+    if (error.response?.status === 401) {
+      const userStore = useUserStore();
+      userStore.logout();
+      router.push('/login');
+    }
+    return Promise.reject(error);
+  }
 );

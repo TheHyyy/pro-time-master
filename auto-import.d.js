@@ -20,4 +20,5 @@ declare global {
   const updateTodo: typeof import('./src/api/todo.js')['updateTodo']
   const updateTodoPomodoros: typeof import('./src/api/todo.js')['updateTodoPomodoros']
   const useNetworkStatus: typeof import('./src/composables/useNetworkStatus.js')['useNetworkStatus']
+  const useUserStore: typeof import('./src/stores/user.js')['useUserStore']
 }

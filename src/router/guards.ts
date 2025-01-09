@@ -1,21 +1,18 @@
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
-export const authGuard = (
+export const authGuard = async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ) => {
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      next({
-        path: '/login',
-        query: { redirect: to.fullPath },
-      });
-    } else {
-      next();
-    }
-  } else {
-    next();
+  const token = localStorage.getItem('token');
+  
+  if (!token) {
+    const store = useUserStore();
+    store.showLoginDialog = true;
   }
+  
+  // 始终允许导航
+  next();
 }; 

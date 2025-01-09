@@ -51,6 +51,14 @@
         <el-form-item label="更新时间">
           <span>{{ formatDate(todoForm.updatedAt) }}</span>
         </el-form-item>
+
+        <el-form-item label="截止日期">
+          <el-date-picker
+            v-model="todoForm.dueDate"
+            type="datetime"
+            placeholder="选择截止日期"
+          />
+        </el-form-item>
       </el-form>
     </template>
 

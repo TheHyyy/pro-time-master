@@ -1,7 +1,10 @@
 <template>
   <div class="todo_item" :class="quadrantClass">
     <div class="todo_item_aside">
-      <el-checkbox v-model="todo.completed" @click="handleCheckboxClick" />
+      <el-checkbox 
+        :model-value="todo.completed"
+        @change="handleCheckboxClick"
+      />
     </div>
 
     <div class="todo_item_content">
@@ -11,7 +14,7 @@
             'todo_item_title',
             { todo_item_title_completed: todo.completed },
           ]"
-          @click="handleTitleClick"
+          @click="$emit('select-task', todo)"
         >
           {{ todo.title }}
         </div>
@@ -25,7 +28,7 @@
           size="small"
           circle
           :icon="Timer"
-          @click="$emit('start-pomodoro')"
+          @click="$emit('select-task', todo)"
         />
         <el-icon class="todo_item_delete" @click="handleDeleteClick">
           <Close />
@@ -54,7 +57,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update-status", "click-title", "delete", "start-pomodoro"]);
+const emit = defineEmits(['update', 'delete', 'select-task']);
 
 const quadrantLabel = computed(() => URGENT_LABEL_MAP[props.todo.quadrant]);
 const quadrantTagType = computed(() => {
@@ -69,20 +72,15 @@ const quadrantTagType = computed(() => {
 
 const quadrantClass = computed(() => `quadrant-${props.todo.quadrant}`);
 
-const handleCheckboxClick = () => {
-  // 当复选框点击时，通知父组件更新 todos
-  emit("update-status", props.todo); // 将更新后的 todo 传递给父组件
+const handleCheckboxClick = (value) => {
+  emit('update', {
+    ...props.todo,
+    completed: value
+  });
 };
 
-const handleTitleClick = () => {
-  // 通知父组件处理标题点击
-  emit("click-title", props.todo);
-};
-
-// 处理删除操作，通知父组件删除
 const handleDeleteClick = () => {
-  console.log("🚀 ~ handleDeleteClick ~ props.todo:", props.todo);
-  emit("delete", props.todo); // 向父组件发送删除事件
+  emit('delete', props.todo);
 };
 </script>
 
