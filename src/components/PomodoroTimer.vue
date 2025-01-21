@@ -1,54 +1,54 @@
 <template>
-  <div 
-    class="pomodoro-timer" 
-    :class="{ 'fullscreen': isFullscreen }"
-  >
-    <div class="timer-content">
-      <!-- 顶部任务名称 -->
-      <div class="task-name">
-        {{ task?.title || '请选择一个任务...' }}
+  <div class="pomodoro_timer" :class="{ fullscreen: isFullscreen }">
+    <div v-show="isFullscreen">
+      <!-- 左上角的折叠按钮 -->
+      <div class="close-button" @click="toggleFullscreen">
+        <el-icon><ArrowDown /></el-icon>
       </div>
+      <div class="timer-content">
+        <!-- 顶部任务名称 -->
+        <div class="task-name">
+          {{ task?.title || "请选择一个任务..." }}
+        </div>
+        <!-- 计时器圆环 -->
+        <div class="timer-circle">
+          <div class="time-display">{{ formatTime(timeLeft) }}</div>
+          <div class="timer-controls">
+            <el-button type="primary" round size="large" @click="toggleTimer">
+              {{ isRunning ? "暂停" : "开始专注" }}
+            </el-button>
+          </div>
+        </div>
 
-      <!-- 计时器圆环 -->
-      <div class="timer-circle">
-        <div class="time-display">{{ formatTime(timeLeft) }}</div>
-        <div class="timer-controls">
-          <el-button 
-            type="primary" 
-            round 
-            size="large"
-            @click="toggleTimer"
-          >
-            {{ isRunning ? '暂停' : '开始专注' }}
-          </el-button>
-        </div>
+        <!-- 底部控制栏 -->
+        <!-- <div class="bottom-controls">
+          <div class="control-item" @click="toggleFullscreen">
+            <el-icon><FullScreen /></el-icon>
+            <span>全屏</span>
+          </div>
+          <div class="control-item">
+            <el-icon><Timer /></el-icon>
+            <span>计时模式</span>
+          </div>
+          <div class="control-item">
+            <el-icon><Notification /></el-icon>
+            <span>白噪音</span>
+          </div>
+        </div> -->
       </div>
-
-      <!-- 底部控制栏 -->
-      <div class="bottom-controls">
-        <div class="control-item" @click="toggleFullscreen">
-          <el-icon><FullScreen /></el-icon>
-          <span>全屏</span>
-        </div>
-        <div class="control-item">
-          <el-icon><Timer /></el-icon>
-          <span>计时模式</span>
-        </div>
-        <div class="control-item">
-          <el-icon><Notification /></el-icon>
-          <span>白噪音</span>
-        </div>
-      </div>
+    </div>
+    <div v-show="!isFullscreen" @click="toggleFullscreen">
+      <div class="time-display">{{ formatTime(timeLeft) }}</div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { Timer, Notification, FullScreen } from "@element-plus/icons-vue";
+import { Timer, ArrowDown, FullScreen } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
-import { pomodoroStorage } from '@/utils/pomodoroStorage';
-import { updateTodoPomodoros } from '@/api/todo';
+import { pomodoroStorage } from "@/utils/pomodoroStorage";
+import { updateTodoPomodoros } from "@/api/todo";
 
 const props = defineProps({
   task: {
@@ -63,7 +63,7 @@ const emit = defineEmits(["pomodoro-complete"]);
 const isFullscreen = ref(false);
 const isRunning = ref(false);
 const timeLeft = ref(25 * 60); // 默认25分钟
-const currentMode = ref('work'); // work, shortBreak, longBreak
+const currentMode = ref("work"); // work, shortBreak, longBreak
 const completedPomodoros = ref(0);
 const settings = ref(pomodoroStorage.getSettings());
 
@@ -74,7 +74,7 @@ const saveCurrentSession = () => {
       timeLeft: timeLeft.value,
       currentMode: currentMode.value,
       completedPomodoros: completedPomodoros.value,
-      taskId: props.task?.id
+      taskId: props.task?.id,
     });
   } else {
     pomodoroStorage.clearCurrentSession();
@@ -97,7 +97,9 @@ let timerInterval = null;
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  return `${String(minutes).padStart(2, "0")}:${String(
+    remainingSeconds
+  ).padStart(2, "0")}`;
 }
 
 function toggleTimer() {
@@ -127,46 +129,49 @@ function resetTimer() {
   clearInterval(timerInterval);
   timeLeft.value = settings.value.workTime * 60;
   isRunning.value = false;
-  currentMode.value = 'work';
+  currentMode.value = "work";
 }
 
 async function handlePomodoroComplete() {
   const audio = new Audio("/notification.mp3");
   audio.play();
 
-  if (currentMode.value === 'work') {
+  if (currentMode.value === "work") {
     completedPomodoros.value++;
-    
+
     if (props.task) {
       try {
         await updateTodoPomodoros(props.task.id);
         emit("pomodoro-complete");
       } catch (error) {
-        console.error('Failed to update pomodoros:', error);
+        console.error("Failed to update pomodoros:", error);
       }
     }
 
     if (completedPomodoros.value % settings.value.longBreakInterval === 0) {
-      currentMode.value = 'longBreak';
+      currentMode.value = "longBreak";
       timeLeft.value = settings.value.longBreakTime * 60;
     } else {
-      currentMode.value = 'shortBreak';
+      currentMode.value = "shortBreak";
       timeLeft.value = settings.value.shortBreakTime * 60;
     }
   } else {
-    currentMode.value = 'work';
+    currentMode.value = "work";
     timeLeft.value = settings.value.workTime * 60;
   }
 
-  if ((currentMode.value === 'work' && settings.value.autoStartPomodoros) ||
-      (currentMode.value !== 'work' && settings.value.autoStartBreaks)) {
+  if (
+    (currentMode.value === "work" && settings.value.autoStartPomodoros) ||
+    (currentMode.value !== "work" && settings.value.autoStartBreaks)
+  ) {
     toggleTimer();
   }
 
   ElMessage.success({
-    message: currentMode.value === 'work' 
-      ? "休息结束，开始新的工作时段！" 
-      : "工作时段完成，休息一下吧！",
+    message:
+      currentMode.value === "work"
+        ? "休息结束，开始新的工作时段！"
+        : "工作时段完成，休息一下吧！",
     duration: 3000,
   });
 }
@@ -187,31 +192,46 @@ onUnmounted(() => {
   saveCurrentSession();
 });
 
-watch(() => props.task, (newTask) => {
-  if (newTask) {
-    resetTimer();
+watch(
+  () => props.task,
+  (newTask) => {
+    if (newTask) {
+      resetTimer();
+    }
   }
-});
+);
 </script>
 
 <style lang="scss" scoped>
-.pomodoro-timer {
+.close-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2001;
+  font-size: 24px;
+  color: #fff;
+  cursor: pointer;
+}
+.pomodoro_timer {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.95);
-  z-index: 2000;
+  bottom: 0;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
-  opacity: 0;
-  visibility: hidden;
+  background-color: rgba(0, 0, 0, 0.95);
+  z-index: 2000;
+  opacity: 1;
   transition: all 0.3s ease;
+  color: #fff;
 
   &.fullscreen {
     opacity: 1;
+    width: 100%;
+    height: 100%;
     visibility: visible;
   }
 
@@ -241,7 +261,7 @@ watch(() => props.task, (newTask) => {
     margin-bottom: 40px;
 
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       width: 420px;
       height: 420px;
@@ -262,7 +282,7 @@ watch(() => props.task, (newTask) => {
         font-size: 16px;
         background: transparent;
         border-color: rgba(255, 255, 255, 0.2);
-        
+
         &:hover {
           background: rgba(255, 255, 255, 0.1);
         }
