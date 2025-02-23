@@ -21,20 +21,21 @@
         </div>
 
         <!-- 底部控制栏 -->
-        <!-- <div class="bottom-controls">
-          <div class="control-item" @click="toggleFullscreen">
-            <el-icon><FullScreen /></el-icon>
-            <span>全屏</span>
-          </div>
-          <div class="control-item">
-            <el-icon><Timer /></el-icon>
-            <span>计时模式</span>
-          </div>
-          <div class="control-item">
+        <div class="bottom-controls">
+          <div class="control-item" @click="toggleWhiteNoise">
             <el-icon><Notification /></el-icon>
-            <span>白噪音</span>
+            <span>{{ isPlayingWhiteNoise ? '关闭白噪音' : '开启白噪音' }}</span>
           </div>
-        </div> -->
+          <div class="volume-slider" v-if="isPlayingWhiteNoise">
+            <el-slider
+              v-model="whiteNoiseVolume"
+              :min="0"
+              :max="100"
+              :step="1"
+              @input="adjustWhiteNoiseVolume"
+            />
+          </div>
+        </div>
       </div>
     </div>
     <div v-show="!isFullscreen" @click="toggleFullscreen">
@@ -45,7 +46,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { Timer, ArrowDown, FullScreen } from "@element-plus/icons-vue";
+import { Timer, ArrowDown, FullScreen, Notification } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { pomodoroStorage } from "@/utils/pomodoroStorage";
 import { updateTodoPomodoros } from "@/api/todo";
@@ -66,6 +67,11 @@ const timeLeft = ref(25 * 60); // 默认25分钟
 const currentMode = ref("work"); // work, shortBreak, longBreak
 const completedPomodoros = ref(0);
 const settings = ref(pomodoroStorage.getSettings());
+
+// 白噪音相关状态
+const isPlayingWhiteNoise = ref(false);
+const whiteNoiseVolume = ref(50);
+const whiteNoiseAudio = ref(null);
 
 // 保存当前会话状态
 const saveCurrentSession = () => {
@@ -200,122 +206,240 @@ watch(
     }
   }
 );
+
+// 白噪音控制函数
+function toggleWhiteNoise() {
+  if (!whiteNoiseAudio.value) {
+    whiteNoiseAudio.value = new Audio('/white-noise.mp3');
+    whiteNoiseAudio.value.loop = true;
+  }
+
+  if (isPlayingWhiteNoise.value) {
+    whiteNoiseAudio.value.pause();
+  } else {
+    whiteNoiseAudio.value.volume = whiteNoiseVolume.value / 100;
+    whiteNoiseAudio.value.play();
+  }
+  
+  isPlayingWhiteNoise.value = !isPlayingWhiteNoise.value;
+}
+
+function adjustWhiteNoiseVolume(value) {
+  if (whiteNoiseAudio.value) {
+    whiteNoiseAudio.value.volume = value / 100;
+  }
+}
+
+// 组件卸载时停止白噪音
+onUnmounted(() => {
+  if (whiteNoiseAudio.value) {
+    whiteNoiseAudio.value.pause();
+    whiteNoiseAudio.value = null;
+  }
+});
 </script>
 
 <style lang="scss" scoped>
 .close-button {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 32px;
+  left: 32px;
   z-index: 2001;
-  font-size: 24px;
-  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .el-icon {
+    font-size: 20px;
+  }
 }
 .pomodoro_timer {
   position: fixed;
-  bottom: 0;
+  bottom: 24px;
   left: 50%;
-  width: 200px;
-  height: 200px;
+  width: 80px;
+  height: 80px;
   transform: translateX(-50%);
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.95);
+  background: linear-gradient(135deg, #1a1a1a 0%, #363636 100%);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 2000;
   opacity: 1;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   color: #fff;
+  cursor: pointer;
+
+  &:hover {
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+  }
 
   &.fullscreen {
-    opacity: 1;
     width: 100%;
     height: 100%;
-    visibility: visible;
-  }
+    bottom: 0;
+    border-radius: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    cursor: default;
 
-  .timer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #fff;
-  }
-
-  .task-name {
-    font-size: 18px;
-    margin-bottom: 40px;
-    opacity: 0.8;
-  }
-
-  .timer-circle {
-    position: relative;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 40px;
-
-    &::before {
-      content: "";
-      position: absolute;
-      width: 420px;
-      height: 420px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      pointer-events: none;
+    .timer-content {
+      opacity: 1;
+      transform: translateY(0);
     }
+  }
 
+  // 非全屏时的样式
+  &:not(.fullscreen) {
     .time-display {
-      font-size: 96px;
-      font-weight: 200;
-      margin-bottom: 20px;
-    }
-
-    .timer-controls {
-      :deep(.el-button) {
-        padding: 12px 36px;
-        font-size: 16px;
-        background: transparent;
-        border-color: rgba(255, 255, 255, 0.2);
-
-        &:hover {
-          background: rgba(255, 255, 255, 0.1);
-        }
-      }
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
   }
+}
 
-  .bottom-controls {
-    display: flex;
-    gap: 60px;
-    margin-top: 40px;
+.timer-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #fff;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
-    .control-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      opacity: 0.6;
-      transition: opacity 0.3s;
+.task-name {
+  font-size: 20px;
+  font-weight: 300;
+  margin-bottom: 48px;
+  opacity: 0.9;
+  letter-spacing: 0.5px;
+}
+
+.timer-circle {
+  position: relative;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 48px;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+
+  &::before {
+    content: "";
+    position: absolute;
+    width: 380px;
+    height: 380px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    pointer-events: none;
+  }
+
+  .time-display {
+    font-size: 88px;
+    font-weight: 200;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  .timer-controls {
+    :deep(.el-button) {
+      padding: 12px 36px;
+      font-size: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      transition: all 0.3s ease;
 
       &:hover {
-        opacity: 1;
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-1px);
       }
 
-      .el-icon {
-        font-size: 24px;
-      }
-
-      span {
-        font-size: 12px;
+      &:active {
+        transform: translateY(0);
       }
     }
+  }
+}
+
+.bottom-controls {
+  display: flex;
+  gap: 60px;
+  margin-top: 40px;
+
+  .control-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.3s;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    .el-icon {
+      font-size: 24px;
+    }
+
+    span {
+      font-size: 12px;
+    }
+  }
+}
+
+.close-button {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 2001;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  .el-icon {
+    font-size: 20px;
   }
 }
 </style>

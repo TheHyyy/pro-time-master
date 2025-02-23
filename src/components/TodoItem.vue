@@ -2,7 +2,7 @@
   <div class="todo_item" :class="quadrantClass">
     <div class="todo_item_aside">
       <el-checkbox 
-        :model-value="todo.completed"
+        v-model="todo.completed"
         @change="handleCheckboxClick"
       />
     </div>
@@ -73,7 +73,7 @@ const quadrantTagType = computed(() => {
 const quadrantClass = computed(() => `quadrant-${props.todo.quadrant}`);
 
 const handleCheckboxClick = (value) => {
-  emit('update', {
+  emit('update-status', {
     ...props.todo,
     completed: value
   });

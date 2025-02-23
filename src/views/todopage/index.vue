@@ -7,7 +7,7 @@
         <div class="stat-label">预计时间</div>
       </div>
       <div class="stat-item">
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ uncompletedCount }}</div>
         <div class="stat-label">待完成任务</div>
       </div>
       <div class="stat-item">
@@ -15,7 +15,7 @@
         <div class="stat-label">已专注时间</div>
       </div>
       <div class="stat-item">
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ completedCount }}</div>
         <div class="stat-label">已完成任务</div>
       </div>
     </div>
@@ -43,8 +43,56 @@
       </div>
     </div>
 
-    <!-- 任务列表 -->
-    <div class="todo-list" v-if="filteredTodos.length > 0">
+    <!-- 任务分类切换 -->
+    <div class="filter-tabs">
+      <el-tabs v-model="currentFilter">
+        <el-tab-pane label="全部" name="all" />
+        <el-tab-pane label="今天" name="today" />
+        <el-tab-pane label="明天" name="tomorrow" />
+        <el-tab-pane label="重要四象限" name="quadrant" />
+      </el-tabs>
+    </div>
+
+    <!-- 四象限视图 -->
+    <div v-if="currentFilter === 'quadrant'" class="quadrant-view">
+      <div class="quadrant-grid">
+        <div v-for="quadrant in quadrantList" :key="quadrant.value" class="quadrant-section">
+          <div class="quadrant-header" :style="{ borderColor: quadrant.color }">
+            {{ quadrant.label }}
+          </div>
+          <div class="quadrant-content">
+            <div
+              v-for="todo in getTodosByQuadrant(quadrant.value)"
+              :key="todo.id"
+              class="todo-item"
+              :class="{ completed: todo.completed }"
+            >
+              <div class="todo-content">
+                <el-checkbox :checked="todo.completed" @change="toggleTodo(todo)" />
+                <span class="todo-title">{{ todo.title }}</span>
+              </div>
+              <div class="todo-actions">
+                <span class="pomodoro-count" v-if="todo.pomodoroCount">
+                  {{ todo.pomodoroCount }} 个番茄钟
+                </span>
+                <el-button text type="primary" @click="startPomodoro(todo)">
+                  开始专注
+                </el-button>
+                <el-button text type="primary" @click="editTodo(todo)">
+                  编辑
+                </el-button>
+                <el-button text type="danger" @click="deleteTodo(todo)">
+                  删除
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 列表视图 -->
+    <div v-else class="todo-list" v-if="filteredTodos.length > 0">
       <div
         v-for="todo in filteredTodos"
         :key="todo.id"
@@ -52,7 +100,7 @@
         :class="{ completed: todo.completed }"
       >
         <div class="todo-content">
-          <el-checkbox v-model="todo.completed" @change="toggleTodo(todo)" />
+          <el-checkbox :checked="todo.completed" @change="toggleTodo(todo)" />
           <span class="todo-title">{{ todo.title }}</span>
         </div>
         <div class="todo-actions">
@@ -163,6 +211,39 @@
     }
   }
 
+  .filter-tabs {
+    margin-bottom: 24px;
+  }
+
+  .quadrant-view {
+    .quadrant-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+
+      .quadrant-section {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+
+        .quadrant-header {
+          padding: 16px;
+          font-size: 16px;
+          font-weight: 500;
+          border-bottom: 2px solid;
+          background: rgba(0, 0, 0, 0.02);
+        }
+
+        .quadrant-content {
+          padding: 16px;
+          min-height: 200px;
+        }
+      }
+    }
+  }
+
   .todo-list {
     background: #fff;
     border-radius: 8px;
@@ -225,11 +306,32 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { Plus } from '@element-plus/icons-vue';
+import { Plus } from "@element-plus/icons-vue";
 import PomodoroTimer from "@/components/PomodoroTimer.vue";
 import TodoDrawer from "./components/TodoDrawer.vue";
 import { ElMessage } from "element-plus";
 import { fetchTodos, updateTodo, removeTodo, createTodo } from "@/api/todo";
+import { 
+  URGENT_IMPORTANT,
+  URGENT_NOT_IMPORTANT,
+  NOT_URGENT_IMPORTANT,
+  NOT_URGENT_NOT_IMPORTANT,
+  URGENT_COLOR_MAP,
+  URGENT_LABEL_MAP
+} from '@/constant/todo';
+
+// 四象限列表
+const quadrantList = [
+  { value: URGENT_IMPORTANT, label: URGENT_LABEL_MAP[URGENT_IMPORTANT], color: URGENT_COLOR_MAP[URGENT_IMPORTANT] },
+  { value: URGENT_NOT_IMPORTANT, label: URGENT_LABEL_MAP[URGENT_NOT_IMPORTANT], color: URGENT_COLOR_MAP[URGENT_NOT_IMPORTANT] },
+  { value: NOT_URGENT_IMPORTANT, label: URGENT_LABEL_MAP[NOT_URGENT_IMPORTANT], color: URGENT_COLOR_MAP[NOT_URGENT_IMPORTANT] },
+  { value: NOT_URGENT_NOT_IMPORTANT, label: URGENT_LABEL_MAP[NOT_URGENT_NOT_IMPORTANT], color: URGENT_COLOR_MAP[NOT_URGENT_NOT_IMPORTANT] },
+];
+
+// 根据四象限获取任务
+const getTodosByQuadrant = (quadrant) => {
+  return todos.value.filter(todo => todo.quadrant === quadrant);
+};
 
 // 状态
 const todos = ref([]);
@@ -239,6 +341,10 @@ const currentFilter = ref("all");
 const drawerVisible = ref(false);
 const editingTodo = ref(null);
 const newTaskTitle = ref("");
+
+// 统计数据
+const uncompletedCount = computed(() => todos.value.filter(todo => !todo.completed).length);
+const completedCount = computed(() => todos.value.filter(todo => todo.completed).length);
 
 // 快速添加任务标签
 const quickTags = ["工作", "学习", "运动", "阅读"];
@@ -260,7 +366,7 @@ const totalCompletedTime = computed(() => {
 const formatTime = (seconds) => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
+
   if (hours > 0) {
     return `${hours}小时${minutes}分钟`;
   }
@@ -269,13 +375,26 @@ const formatTime = (seconds) => {
 
 // 根据筛选条件过滤任务
 const filteredTodos = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
   switch (currentFilter.value) {
-    case "urgent-important":
-      return todos.value.filter((todo) => todo.quadrant === "1");
-    case "completed":
-      return todos.value.filter((todo) => todo.completed);
-    case "statistics":
-      return [];
+    case 'today':
+      return todos.value.filter(todo => {
+        const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+        return dueDate && dueDate >= today && dueDate < tomorrow;
+      });
+    case 'tomorrow':
+      const dayAfterTomorrow = new Date(tomorrow);
+      dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+      return todos.value.filter(todo => {
+        const dueDate = todo.dueDate ? new Date(todo.dueDate) : null;
+        return dueDate && dueDate >= tomorrow && dueDate < dayAfterTomorrow;
+      });
+    case 'quadrant':
+      return todos.value;
     default:
       return todos.value;
   }
@@ -284,18 +403,32 @@ const filteredTodos = computed(() => {
 // 添加新任务
 const addTodo = async () => {
   if (!newTaskTitle.value.trim()) return;
-  
+
   try {
     const todo = {
       title: newTaskTitle.value,
       completed: false,
+      quadrant: NOT_URGENT_NOT_IMPORTANT, // 默认设置为不紧急不重要
+      dueDate: null,
+      description: '',
+      estimatedTime: 1, // 默认预计时间为1个番茄钟
+      pomodoroCount: 0
     };
-    
+
     const response = await createTodo(todo);
     if (response.success) {
       await getTodos();
       newTaskTitle.value = "";
-      ElMessage.success("添加成功");
+      // 添加成功后显示可点击的提示信息
+      ElMessage({
+        message: "点击这里设置任务属性",
+        type: "success",
+        duration: 5000,
+        onClick: () => {
+          editingTodo.value = response.data;
+          drawerVisible.value = true;
+        }
+      });
     }
   } catch (error) {
     ElMessage.error("添加失败");
@@ -308,12 +441,26 @@ const addQuickTask = async (tag) => {
     const todo = {
       title: tag,
       completed: false,
+      quadrant: NOT_URGENT_NOT_IMPORTANT, // 默认设置为不紧急不重要
+      dueDate: null,
+      description: '',
+      estimatedTime: 1,
+      pomodoroCount: 0
     };
-    
+
     const response = await createTodo(todo);
     if (response.success) {
       await getTodos();
-      ElMessage.success("添加成功");
+      // 添加成功后显示可点击的提示信息
+      ElMessage({
+        message: "点击这里设置任务属性",
+        type: "success",
+        duration: 5000,
+        onClick: () => {
+          editingTodo.value = response.data;
+          drawerVisible.value = true;
+        }
+      });
     }
   } catch (error) {
     ElMessage.error("添加失败");

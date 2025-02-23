@@ -12,7 +12,7 @@ export const createTodo = (todo) => {
   const todoData = {
     title: todo.title,
     description: todo.description || '',
-    quadrant: todo.quadrant || '4'
+    priority: Number(todo.quadrant) || 4
   };
   
   return http.post('/todos', todoData);
